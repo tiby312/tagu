@@ -3,6 +3,11 @@ use super::*;
 pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
     Raw { data }
 }
+
+pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
+    RawEscapable { data }
+}
+
 pub struct Raw<D> {
     data: D,
 }
@@ -12,7 +17,21 @@ impl<D: fmt::Display> RenderElem for Raw<D> {
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
         use std::fmt::Write;
         //TODO write one global function
-        write!(crate::escape_guard(w), " {}", self.data)?;
+        write!(crate::tools::escape_guard(w), " {}", self.data)?;
+        Ok(())
+    }
+}
+
+pub struct RawEscapable<D> {
+    data: D,
+}
+
+impl<D: fmt::Display> RenderElem for RawEscapable<D> {
+    type Tail = ();
+    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+        use std::fmt::Write;
+        //TODO write one global function
+        write!(w, " {}", self.data)?;
         Ok(())
     }
 }
@@ -36,7 +55,7 @@ impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
         use fmt::Write;
         let Single { tag, attr } = self;
         w.write_char('<')?;
-        write!(crate::escape_guard(&mut *w), "{}", tag)?;
+        write!(crate::tools::escape_guard(&mut *w), "{}", tag)?;
         w.write_char(' ')?;
         attr.render(w)?;
         w.write_str(" />")?;
@@ -61,7 +80,7 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
     fn render(self, w: &mut MyWrite) -> std::fmt::Result {
         use fmt::Write;
         w.write_str("</")?;
-        write!(escape_guard(&mut *w), "{}", &self.tag)?;
+        write!(tools::escape_guard(&mut *w), "{}", &self.tag)?;
         w.write_char('>')
     }
 }
@@ -87,7 +106,7 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
 
         use fmt::Write;
         w.write_char('<')?;
-        write!(crate::escape_guard(&mut *w), "{}", tag)?;
+        write!(crate::tools::escape_guard(&mut *w), "{}", tag)?;
         w.write_char(' ')?;
         attr.render(w)?;
         w.write_str(" >")?;
