@@ -5,11 +5,6 @@ fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let path = {
-        use room::build::PathCommand::*;
-        vec![M(200, 120), Q(300, 50, 400, 120), T(500, 120)].into_iter()
-    };
-
     let rect = build::single("rect").with_attr(attrs!(
         ("x1", 0),
         ("y1", 0),
@@ -17,9 +12,7 @@ fn main() -> std::fmt::Result {
         ("ry", 20),
         ("width", width),
         ("height", height),
-        ("style", "fill:blue"),
-        build::points((0..10).map(|i| (i, i))),
-        build::path(path)
+        ("style", "fill:blue")
     ));
 
     let style =
