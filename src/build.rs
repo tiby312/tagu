@@ -14,7 +14,7 @@ pub struct Raw<D> {
 
 impl<D: fmt::Display> RenderElem for Raw<D> {
     type Tail = ();
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         use std::fmt::Write;
         //TODO write one global function
         write!(crate::tools::escape_guard(w), " {}", self.data)?;
@@ -28,7 +28,7 @@ pub struct RawEscapable<D> {
 
 impl<D: fmt::Display> RenderElem for RawEscapable<D> {
     type Tail = ();
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         use std::fmt::Write;
         //TODO write one global function
         write!(w, " {}", self.data)?;
@@ -51,7 +51,7 @@ impl<D: fmt::Display, A: Attr> Single<D, A> {
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     type Tail = ();
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         use fmt::Write;
         let Single { tag, attr } = self;
         w.write_char('<')?;
@@ -77,7 +77,7 @@ pub struct ElemTail<D> {
 }
 
 impl<D: fmt::Display> RenderTail for ElemTail<D> {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
         use fmt::Write;
         w.write_str("</")?;
         write!(tools::escape_guard(&mut *w), "{}", &self.tag)?;
@@ -101,7 +101,7 @@ impl<D: fmt::Display, A: Attr> Elem<D, A> {
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
     type Tail = ElemTail<D>;
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         let Elem { tag, attr } = self;
 
         use fmt::Write;
@@ -120,7 +120,7 @@ pub struct Path<I> {
 }
 
 impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
         use fmt::Write;
 
         w.write_str(" d=\"")?;
@@ -145,7 +145,7 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 }
 
 impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
         use fmt::Write;
         w.write_str(" points=\"")?;
         for (x, y) in self.iter {

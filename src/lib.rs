@@ -4,15 +4,15 @@ use std::fmt;
 
 pub mod prelude {
     pub use super::attrs;
-    pub use super::chain;
+    pub use super::elems;
     pub use super::format_move;
     pub use super::Attr;
     pub use super::RenderElem;
 }
 
-pub struct MyWrite<'a>(pub &'a mut dyn fmt::Write);
+pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
 
-impl fmt::Write for MyWrite<'_> {
+impl fmt::Write for WriteWrap<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.0.write_str(s)
     }
@@ -26,7 +26,7 @@ impl fmt::Write for MyWrite<'_> {
 }
 
 pub trait Attr {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result;
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result;
     fn chain<R: Attr>(self, other: R) -> AttrChain<Self, R>
     where
         Self: Sized,
@@ -39,7 +39,7 @@ pub trait Attr {
 }
 
 impl Attr for () {
-    fn render(self, _: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, _: &mut WriteWrap) -> std::fmt::Result {
         Ok(())
     }
 }
@@ -50,7 +50,7 @@ pub struct AttrChain<A, B> {
     second: B,
 }
 impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
         let AttrChain { first, second } = self;
         use fmt::Write;
         first.render(w)?;
@@ -60,7 +60,7 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
 }
 
 impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
         let (first, second) = self;
         use fmt::Write;
         write!(crate::tools::escape_guard(&mut *w), " {}", first)?;
@@ -71,33 +71,38 @@ impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
 }
 
 pub trait RenderTail {
-    fn render(self, w: &mut MyWrite) -> std::fmt::Result;
+    fn render(self, w: &mut WriteWrap) -> std::fmt::Result;
 }
 
 impl RenderTail for () {
-    fn render(self, _: &mut MyWrite) -> std::fmt::Result {
+    fn render(self, _: &mut WriteWrap) -> std::fmt::Result {
         Ok(())
     }
 }
 
+fn render_all<R: RenderElem>(a: R, w: &mut WriteWrap) -> fmt::Result {
+    let next = a.render_head(w)?;
+    next.render(w)
+}
+
 pub trait RenderElem {
     type Tail: RenderTail;
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error>;
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error>;
 
     fn render_with<W: fmt::Write>(self, mut w: W) -> fmt::Result
     where
         Self: Sized,
     {
-        self.render_all(&mut MyWrite(&mut w))
+        render_all(self, &mut WriteWrap(&mut w))
     }
-    /// Render head and tail.
-    fn render_all(self, w: &mut MyWrite) -> fmt::Result
-    where
-        Self: Sized,
-    {
-        let next = self.render_head(w)?;
-        next.render(w)
-    }
+    // /// Render head and tail.
+    // fn render_all(self, w: &mut MyWrite) -> fmt::Result
+    // where
+    //     Self: Sized,
+    // {
+    //     let next = self.render_head(w)?;
+    //     next.render(w)
+    // }
 
     /// Render all of Self and head of other, store tail of other.
     fn chain<R: RenderElem>(self, other: R) -> Chain<Self, R>
@@ -127,19 +132,19 @@ pub struct Append<A, B> {
 
 impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     type Tail = A::Tail;
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
         let tail = top.render_head(w)?;
-        bottom.render_all(w)?;
+        render_all(bottom, w)?;
         Ok(tail)
     }
 }
 
 impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for I {
     type Tail = ();
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         for i in self {
-            i.render_all(w)?;
+            render_all(i, w)?;
         }
         Ok(())
     }
@@ -153,9 +158,9 @@ pub struct Chain<A, B> {
 
 impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
     type Tail = B::Tail;
-    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
-        top.render_all(w)?;
+        render_all(top, w)?;
         bottom.render_head(w)
     }
 }
@@ -171,7 +176,7 @@ fn test_svg() {
     //let html = elem("html", crate::empty_attr);
 
     let mut w = crate::tools::upgrade_write(std::io::stdout());
-    k.render_all(&mut MyWrite(&mut w)).unwrap();
+    render_all(k, &mut WriteWrap(&mut w)).unwrap();
     println!();
 }
 
@@ -194,7 +199,7 @@ macro_rules! attrs {
 }
 
 #[macro_export]
-macro_rules! chain {
+macro_rules! elems {
     ($a:expr)=>{
         $a
     };

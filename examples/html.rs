@@ -19,7 +19,7 @@ fn main() -> std::fmt::Result {
         let table = build::elem("table").with_attr(("style", format_move!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
-            let columns = chain!(
+            let columns = elems!(
                 build::elem("th").append(build::raw(format_move!("Hay {}:1", i))),
                 build::elem("th").append(build::raw(format_move!("Hay {}:2", i))),
                 build::elem("th").append(build::raw(format_move!("Hay {}:3", i)))
