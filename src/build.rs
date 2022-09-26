@@ -8,6 +8,7 @@ pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
     RawEscapable { data }
 }
 
+#[derive(Copy, Clone)]
 pub struct Raw<D> {
     data: D,
 }
@@ -22,6 +23,7 @@ impl<D: fmt::Display> RenderElem for Raw<D> {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct RawEscapable<D> {
     data: D,
 }
@@ -36,6 +38,7 @@ impl<D: fmt::Display> RenderElem for RawEscapable<D> {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Single<D, A> {
     tag: D,
     attr: A,
@@ -115,6 +118,7 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Path<I> {
     iter: I,
 }
@@ -136,6 +140,7 @@ pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) ->
     Path { iter }
 }
 
+#[derive(Copy, Clone)]
 pub struct Points<I> {
     iter: I,
 }
@@ -160,6 +165,8 @@ impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
 ///
 /// following: [w3 spec](https://www.w3.org/TR/SVG/paths.html#PathDataGeneralInformation)
 ///
+
+#[derive(Copy, Clone)]
 pub enum PathCommand<F> {
     /// move to
     M(F, F),
@@ -202,56 +209,6 @@ pub enum PathCommand<F> {
 }
 
 impl<F> PathCommand<F> {
-    // #[inline(always)]
-    // pub fn map<J>(self, mut func: impl FnMut(F) -> J) -> PathCommand<J> {
-    //     use PathCommand::*;
-
-    //     match self {
-    //         M(x, y) => M(func(x), func(y)),
-    //         M_(x, y) => M_(func(x), func(y)),
-    //         L(x, y) => L(func(x), func(y)),
-    //         L_(x, y) => L_(func(x), func(y)),
-    //         H(a) => H(func(a)),
-    //         H_(a) => H_(func(a)),
-    //         V(a) => V(func(a)),
-    //         V_(a) => V_(func(a)),
-    //         C(x1, y1, x2, y2, x, y) => C(func(x1), func(y1), func(x2), func(y2), func(x), func(y)),
-    //         C_(dx1, dy1, dx2, dy2, dx, dy) => C_(
-    //             func(dx1),
-    //             func(dy1),
-    //             func(dx2),
-    //             func(dy2),
-    //             func(dx),
-    //             func(dy),
-    //         ),
-    //         S(x2, y2, x, y) => S(func(x2), func(y2), func(x), func(y)),
-    //         S_(x2, y2, x, y) => S_(func(x2), func(y2), func(x), func(y)),
-    //         Q(x1, y1, x, y) => Q(func(x1), func(y1), func(x), func(y)),
-    //         Q_(dx1, dy1, dx, dy) => Q_(func(dx1), func(dy1), func(dx), func(dy)),
-    //         T(x, y) => T(func(x), func(y)),
-    //         T_(x, y) => T_(func(x), func(y)),
-    //         A(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, x, y) => A(
-    //             func(rx),
-    //             func(ry),
-    //             func(x_axis_rotation),
-    //             func(large_arc_flag),
-    //             func(sweep_flag),
-    //             func(x),
-    //             func(y),
-    //         ),
-    //         A_(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy) => A_(
-    //             func(rx),
-    //             func(ry),
-    //             func(x_axis_rotation),
-    //             func(large_arc_flag),
-    //             func(sweep_flag),
-    //             func(dx),
-    //             func(dy),
-    //         ),
-    //         Z(a) => Z(func(a)),
-    //     }
-    // }
-
     #[inline(always)]
     fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result
     where

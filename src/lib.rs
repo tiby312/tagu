@@ -124,6 +124,10 @@ pub trait RenderElem {
     }
 }
 
+pub fn hide_impl<R: RenderElem>(a: R) -> impl RenderElem {
+    a
+}
+
 #[derive(Copy, Clone)]
 pub struct Append<A, B> {
     top: A,
