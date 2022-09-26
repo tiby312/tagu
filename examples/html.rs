@@ -1,7 +1,7 @@
 use room::build;
 use room::prelude::*;
 fn main() -> std::fmt::Result {
-    let html = build::elem("html").append(build::raw_escapable("<!DOCTYPE html>"));
+    let html = build::raw_escapable("<!DOCTYPE html>").chain(build::elem("html"));
 
     let style = build::elem("style").append(build::raw(
         "table, th, td {
