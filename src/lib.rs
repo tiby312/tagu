@@ -210,3 +210,7 @@ macro_rules! chain {
         }
     };
 }
+
+pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
+    tools::upgrade_write(std::io::stdout())
+}

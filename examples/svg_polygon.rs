@@ -20,6 +20,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(polygon);
 
-    let w = room::tools::upgrade_write(std::io::stdout());
-    all.render_with(w)
+    all.render_with(room::stdout_fmt())
 }

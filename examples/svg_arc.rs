@@ -27,8 +27,7 @@ fn main() -> std::fmt::Result {
         build::path([M(300, 200), H_(-150), A_(150, 150, 0, 1, 0, 150, -150), Z()])
     ));
 
-    let svg = svg.append(path1).append(path2);
+    let all = svg.append(path1).append(path2);
 
-    let w = room::tools::upgrade_write(std::io::stdout());
-    svg.render_with(w)
+    all.render_with(room::stdout_fmt())
 }
