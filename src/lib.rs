@@ -80,11 +80,6 @@ impl RenderTail for () {
     }
 }
 
-fn render_all<R: RenderElem>(a: R, w: &mut WriteWrap) -> fmt::Result {
-    let next = a.render_head(w)?;
-    next.render(w)
-}
-
 pub trait RenderElem {
     type Tail: RenderTail;
     fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error>;
@@ -93,16 +88,16 @@ pub trait RenderElem {
     where
         Self: Sized,
     {
-        render_all(self, &mut WriteWrap(&mut w))
+        self.render_all(&mut WriteWrap(&mut w))
     }
-    // /// Render head and tail.
-    // fn render_all(self, w: &mut MyWrite) -> fmt::Result
-    // where
-    //     Self: Sized,
-    // {
-    //     let next = self.render_head(w)?;
-    //     next.render(w)
-    // }
+    /// Render head and tail.
+    fn render_all(self, w: &mut WriteWrap) -> fmt::Result
+    where
+        Self: Sized,
+    {
+        let next = self.render_head(w)?;
+        next.render(w)
+    }
 
     /// Render all of Self and head of other, store tail of other.
     fn chain<R: RenderElem>(self, other: R) -> Chain<Self, R>
@@ -139,7 +134,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
         let tail = top.render_head(w)?;
-        render_all(bottom, w)?;
+        bottom.render_all(w)?;
         Ok(tail)
     }
 }
@@ -148,7 +143,7 @@ impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for I {
     type Tail = ();
     fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         for i in self {
-            render_all(i, w)?;
+            i.render_all(w)?;
         }
         Ok(())
     }
@@ -164,7 +159,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
     type Tail = B::Tail;
     fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
-        render_all(top, w)?;
+        top.render_all(w)?;
         bottom.render_head(w)
     }
 }
@@ -180,7 +175,7 @@ fn test_svg() {
     //let html = elem("html", crate::empty_attr);
 
     let mut w = crate::tools::upgrade_write(std::io::stdout());
-    render_all(k, &mut WriteWrap(&mut w)).unwrap();
+    k.render_all(&mut WriteWrap(&mut w)).unwrap();
     println!();
 }
 
