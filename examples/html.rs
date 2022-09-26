@@ -19,13 +19,21 @@ fn main() -> std::fmt::Result {
         let table = build::elem("table").with_attr(("style", format_move!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
-            let columns = elems!(
-                build::elem("th").append(build::raw(format_move!("Hay {}:1", i))),
-                build::elem("th").append(build::raw(format_move!("Hay {}:2", i))),
-                build::elem("th").append(build::raw(format_move!("Hay {}:3", i)))
-            );
+            build::from_closure(move |w| {
+                if i % 2 == 0 {
+                    let columns = elems!(
+                        build::elem("th").append(build::raw(format_move!("Hay {}:1", i))),
+                        build::elem("th").append(build::raw(format_move!("Hay {}:2", i))),
+                        build::elem("th").append(build::raw(format_move!("Hay {}:3", i)))
+                    );
 
-            build::elem("tr").append(columns)
+                    w.render(build::elem("tr").append(columns))?;
+                } else {
+                    let column = build::elem("th").append(build::raw(format_move!("Hay {}:1", i)));
+                    w.render(build::elem("tr").append(column))?;
+                }
+                Ok(())
+            })
         });
         table.append(build::from_iter(rows))
     };

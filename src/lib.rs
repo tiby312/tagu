@@ -12,6 +12,26 @@ pub mod prelude {
 
 pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
 
+impl<'a> WriteWrap<'a> {
+    pub fn new<W: fmt::Write>(w: &'a mut W) -> Self {
+        WriteWrap(w)
+    }
+
+    pub fn render<E: RenderElem>(&mut self, elem: E) -> fmt::Result {
+        elem.render_all(self)
+    }
+
+    pub fn session<E: RenderElem>(
+        &mut self,
+        elem: E,
+        func: impl FnOnce(&mut Self) -> fmt::Result,
+    ) -> fmt::Result {
+        let tail = elem.render_head(self)?;
+        func(self)?;
+        tail.render(self)
+    }
+}
+
 impl fmt::Write for WriteWrap<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.0.write_str(s)
