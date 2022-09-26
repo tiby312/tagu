@@ -119,7 +119,7 @@ pub struct Path<I> {
     iter: I,
 }
 
-impl<I: Iterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
+impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
     fn render(self, w: &mut MyWrite) -> std::fmt::Result {
         use fmt::Write;
 
@@ -132,7 +132,7 @@ impl<I: Iterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
     }
 }
 
-pub fn path<I: Iterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) -> Path<I> {
+pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) -> Path<I> {
     Path { iter }
 }
 
@@ -140,11 +140,11 @@ pub struct Points<I> {
     iter: I,
 }
 
-pub fn points<I: Iterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Points<I> {
+pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Points<I> {
     Points { iter }
 }
 
-impl<I: Iterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
+impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
     fn render(self, w: &mut MyWrite) -> std::fmt::Result {
         use fmt::Write;
         w.write_str(" points=\"")?;
@@ -198,59 +198,59 @@ pub enum PathCommand<F> {
     /// relative elliptical arc
     A_(F, F, F, F, F, F, F),
     /// close path
-    Z(F),
+    Z(),
 }
 
 impl<F> PathCommand<F> {
-    #[inline(always)]
-    pub fn map<J>(self, mut func: impl FnMut(F) -> J) -> PathCommand<J> {
-        use PathCommand::*;
+    // #[inline(always)]
+    // pub fn map<J>(self, mut func: impl FnMut(F) -> J) -> PathCommand<J> {
+    //     use PathCommand::*;
 
-        match self {
-            M(x, y) => M(func(x), func(y)),
-            M_(x, y) => M_(func(x), func(y)),
-            L(x, y) => L(func(x), func(y)),
-            L_(x, y) => L_(func(x), func(y)),
-            H(a) => H(func(a)),
-            H_(a) => H_(func(a)),
-            V(a) => V(func(a)),
-            V_(a) => V_(func(a)),
-            C(x1, y1, x2, y2, x, y) => C(func(x1), func(y1), func(x2), func(y2), func(x), func(y)),
-            C_(dx1, dy1, dx2, dy2, dx, dy) => C_(
-                func(dx1),
-                func(dy1),
-                func(dx2),
-                func(dy2),
-                func(dx),
-                func(dy),
-            ),
-            S(x2, y2, x, y) => S(func(x2), func(y2), func(x), func(y)),
-            S_(x2, y2, x, y) => S_(func(x2), func(y2), func(x), func(y)),
-            Q(x1, y1, x, y) => Q(func(x1), func(y1), func(x), func(y)),
-            Q_(dx1, dy1, dx, dy) => Q_(func(dx1), func(dy1), func(dx), func(dy)),
-            T(x, y) => T(func(x), func(y)),
-            T_(x, y) => T_(func(x), func(y)),
-            A(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, x, y) => A(
-                func(rx),
-                func(ry),
-                func(x_axis_rotation),
-                func(large_arc_flag),
-                func(sweep_flag),
-                func(x),
-                func(y),
-            ),
-            A_(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy) => A_(
-                func(rx),
-                func(ry),
-                func(x_axis_rotation),
-                func(large_arc_flag),
-                func(sweep_flag),
-                func(dx),
-                func(dy),
-            ),
-            Z(a) => Z(func(a)),
-        }
-    }
+    //     match self {
+    //         M(x, y) => M(func(x), func(y)),
+    //         M_(x, y) => M_(func(x), func(y)),
+    //         L(x, y) => L(func(x), func(y)),
+    //         L_(x, y) => L_(func(x), func(y)),
+    //         H(a) => H(func(a)),
+    //         H_(a) => H_(func(a)),
+    //         V(a) => V(func(a)),
+    //         V_(a) => V_(func(a)),
+    //         C(x1, y1, x2, y2, x, y) => C(func(x1), func(y1), func(x2), func(y2), func(x), func(y)),
+    //         C_(dx1, dy1, dx2, dy2, dx, dy) => C_(
+    //             func(dx1),
+    //             func(dy1),
+    //             func(dx2),
+    //             func(dy2),
+    //             func(dx),
+    //             func(dy),
+    //         ),
+    //         S(x2, y2, x, y) => S(func(x2), func(y2), func(x), func(y)),
+    //         S_(x2, y2, x, y) => S_(func(x2), func(y2), func(x), func(y)),
+    //         Q(x1, y1, x, y) => Q(func(x1), func(y1), func(x), func(y)),
+    //         Q_(dx1, dy1, dx, dy) => Q_(func(dx1), func(dy1), func(dx), func(dy)),
+    //         T(x, y) => T(func(x), func(y)),
+    //         T_(x, y) => T_(func(x), func(y)),
+    //         A(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, x, y) => A(
+    //             func(rx),
+    //             func(ry),
+    //             func(x_axis_rotation),
+    //             func(large_arc_flag),
+    //             func(sweep_flag),
+    //             func(x),
+    //             func(y),
+    //         ),
+    //         A_(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy) => A_(
+    //             func(rx),
+    //             func(ry),
+    //             func(x_axis_rotation),
+    //             func(large_arc_flag),
+    //             func(sweep_flag),
+    //             func(dx),
+    //             func(dy),
+    //         ),
+    //         Z(a) => Z(func(a)),
+    //     }
+    // }
 
     #[inline(always)]
     fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result
@@ -321,7 +321,7 @@ impl<F> PathCommand<F> {
                     rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy
                 )
             }
-            Z(_) => {
+            Z() => {
                 write!(writer, " Z")
             }
         }
