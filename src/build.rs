@@ -102,7 +102,7 @@ impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
 }
 
 pub fn single<D: fmt::Display>(tag: D) -> Single<D, ()> {
-    Single { tag: tag, attr: () }
+    Single { tag, attr: () }
 }
 
 pub fn elem<D: fmt::Display>(tag: D) -> Elem<D, ()> {

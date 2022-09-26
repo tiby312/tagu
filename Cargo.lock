@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "room"
+name = "hypermelon"
 version = "0.1.0"
