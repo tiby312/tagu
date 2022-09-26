@@ -1,5 +1,5 @@
-use room::build;
-use room::prelude::*;
+use hypermelon::build;
+use hypermelon::prelude::*;
 
 fn main() -> std::fmt::Result {
     let width = 100.0;
@@ -33,5 +33,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(style).append(rect).append(table);
 
-    all.render_with(room::stdout_fmt())
+    all.render_with(hypermelon::stdout_fmt())
 }

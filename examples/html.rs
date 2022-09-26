@@ -1,5 +1,5 @@
-use room::build;
-use room::prelude::*;
+use hypermelon::build;
+use hypermelon::prelude::*;
 fn main() -> std::fmt::Result {
     let html = build::raw_escapable("<!DOCTYPE html>").chain(build::elem("html"));
 
@@ -32,5 +32,5 @@ fn main() -> std::fmt::Result {
 
     let all = html.append(style).append(table);
 
-    all.render_with(room::stdout_fmt())
+    all.render_with(hypermelon::stdout_fmt())
 }
