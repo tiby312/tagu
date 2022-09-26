@@ -70,3 +70,38 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
         }
     }
 }
+
+use std::fmt;
+/// Shorthand for `disp_const(move |w|write!(w,...))`
+/// Similar to `std::format_args!()` except has a more flexible lifetime.
+#[macro_export]
+macro_rules! format_move {
+    ($($arg:tt)*) => {
+        $crate::tools::disp_const(move |w| write!(w,$($arg)*))
+    }
+}
+
+///
+/// Convert a closure to a object that implements Display
+///
+pub fn disp_const<F: Fn(&mut fmt::Formatter) -> fmt::Result>(a: F) -> DisplayableClosure<F> {
+    DisplayableClosure::new(a)
+}
+
+/// Convert a moved closure into a impl fmt::Display.
+/// This is useful because std's `format_args!()` macro
+/// has a shorter lifetime.
+pub struct DisplayableClosure<F>(pub F);
+
+impl<F: Fn(&mut fmt::Formatter) -> fmt::Result> DisplayableClosure<F> {
+    #[inline(always)]
+    pub fn new(a: F) -> Self {
+        DisplayableClosure(a)
+    }
+}
+impl<F: Fn(&mut fmt::Formatter) -> fmt::Result> fmt::Display for DisplayableClosure<F> {
+    #[inline(always)]
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        (self.0)(formatter)
+    }
+}

@@ -4,6 +4,8 @@ use std::fmt;
 
 pub mod prelude {
     pub use super::attrs;
+    pub use super::chain;
+    pub use super::format_move;
     pub use super::Attr;
     pub use super::RenderElem;
 }
@@ -181,6 +183,24 @@ macro_rules! attrs {
     ( $a:expr,$( $x:expr ),* ) => {
         {
             use $crate::Attr;
+            let mut a=$a;
+            $(
+                let a=a.chain($x);
+            )*
+
+            a
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! chain {
+    ($a:expr)=>{
+        $a
+    };
+    ( $a:expr,$( $x:expr ),* ) => {
+        {
+            use $crate::RenderElem;
             let mut a=$a;
             $(
                 let a=a.chain($x);

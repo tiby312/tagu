@@ -20,7 +20,7 @@ fn main() -> std::fmt::Result {
 
     let svg = build::elem("svg").with_attr(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", format!("0 0 {} {}", width, height))
+        ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
     let rows = (0..50)
