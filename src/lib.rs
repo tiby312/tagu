@@ -139,16 +139,6 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     }
 }
 
-impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for I {
-    type Tail = ();
-    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
-        for i in self {
-            i.render_all(w)?;
-        }
-        Ok(())
-    }
-}
-
 #[derive(Copy, Clone)]
 pub struct Chain<A, B> {
     top: A,

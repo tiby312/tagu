@@ -27,7 +27,7 @@ fn main() -> std::fmt::Result {
 
             build::elem("tr").append(columns)
         });
-        table.append(rows)
+        table.append(build::from_iter(rows))
     };
 
     let all = html.append(style).append(table);

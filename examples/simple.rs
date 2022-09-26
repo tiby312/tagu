@@ -23,9 +23,10 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = (0..50)
-        .step_by(10)
-        .map(|r| build::single("circle").with_attr(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
+    let rows =
+        build::from_iter((0..50).step_by(10).map(|r| {
+            build::single("circle").with_attr(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
+        }));
 
     let table = build::elem("g").with_attr(("class", "test")).append(rows);
 

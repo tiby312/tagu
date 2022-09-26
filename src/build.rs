@@ -8,6 +8,41 @@ pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
     RawEscapable { data }
 }
 
+pub fn from_iter<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> Iter<I> {
+    Iter { iter }
+}
+
+#[derive(Copy, Clone)]
+pub struct Closure<I> {
+    func: I,
+}
+pub fn from_closure<F: FnOnce(&mut WriteWrap) -> fmt::Result>(func: F) -> Closure<F> {
+    Closure { func }
+}
+
+impl<I: FnOnce(&mut WriteWrap) -> fmt::Result> RenderElem for Closure<I> {
+    type Tail = ();
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
+        (self.func)(w)?;
+        Ok(())
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Iter<I> {
+    iter: I,
+}
+
+impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
+    type Tail = ();
+    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
+        for i in self.iter {
+            i.render_all(w)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Raw<D> {
     data: D,
