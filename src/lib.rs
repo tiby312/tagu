@@ -10,37 +10,57 @@ pub mod prelude {
     pub use super::RenderElem;
 }
 
-pub struct AttrWrite<'a>(pub &'a mut dyn fmt::Write);
+pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
+
+impl<'a> WriteWrap<'a> {
+    pub fn borrow_mut(&mut self) -> WriteWrap {
+        WriteWrap(self.0)
+    }
+}
+impl fmt::Write for WriteWrap<'_> {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.0.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
+        self.0.write_char(c)
+    }
+    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
+        self.0.write_fmt(args)
+    }
+}
+
+pub struct AttrWrite<'a>(WriteWrap<'a>);
 impl<'a> AttrWrite<'a> {
     pub fn render<E: Attr>(&mut self, attr: E) -> fmt::Result {
         attr.render(self)
     }
-    pub fn writer(&mut self) -> tools::EscapeGuard<&mut dyn fmt::Write> {
-        tools::escape_guard(self.0)
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+        tools::escape_guard(self.0.borrow_mut())
     }
 
-    pub fn writer_escapable(&mut self) -> &mut dyn fmt::Write {
-        self.0
+    pub fn writer_escapable(&mut self) -> WriteWrap {
+        self.0.borrow_mut()
     }
 }
 
 #[must_use]
-pub struct ElemWrite<'a>(pub &'a mut dyn fmt::Write);
+pub struct ElemWrite<'a>(WriteWrap<'a>);
 
 impl<'a> ElemWrite<'a> {
-    pub fn writer(&mut self) -> &mut dyn fmt::Write {
-        self.0
+    pub fn writer(&mut self) -> WriteWrap {
+        self.0.borrow_mut()
     }
 
-    pub fn writer_escapable(&mut self) -> tools::EscapeGuard<&mut dyn fmt::Write> {
-        tools::escape_guard(self.0)
+    pub fn writer_escapable(&mut self) -> tools::EscapeGuard<WriteWrap> {
+        tools::escape_guard(self.0.borrow_mut())
     }
     fn as_attr_write(&mut self) -> AttrWrite {
-        AttrWrite(self.0)
+        AttrWrite(self.0.borrow_mut())
     }
 
     pub fn new(w: &'a mut dyn fmt::Write) -> Self {
-        ElemWrite(w)
+        ElemWrite(WriteWrap(w))
     }
 
     pub fn render<E: RenderElem>(&mut self, elem: E) -> fmt::Result {
@@ -67,18 +87,6 @@ impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
     }
 }
 
-// impl fmt::Write for AttrWrite<'_> {
-//     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-//         self.0.write_str(s)
-//     }
-
-//     fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
-//         self.0.write_char(c)
-//     }
-//     fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
-//         self.0.write_fmt(args)
-//     }
-// }
 impl fmt::Write for ElemWrite<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.0.write_str(s)
@@ -156,7 +164,7 @@ pub trait RenderElem {
     where
         Self: Sized,
     {
-        self.render_all(&mut ElemWrite(&mut w))
+        self.render_all(&mut ElemWrite(WriteWrap(&mut w)))
     }
     /// Render head and tail.
     fn render_all(self, w: &mut ElemWrite) -> fmt::Result
@@ -233,7 +241,7 @@ fn test_svg() {
     //let html = elem("html", crate::empty_attr);
 
     let mut w = crate::tools::upgrade_write(std::io::stdout());
-    k.render_all(&mut ElemWrite(&mut w)).unwrap();
+    k.render_all(&mut ElemWrite(WriteWrap(&mut w))).unwrap();
     println!();
 }
 
