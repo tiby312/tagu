@@ -159,6 +159,13 @@ pub trait RenderElem {
         next.render(w)
     }
 
+    fn render_closure<K>(self,w:&mut ElemWrite,func:impl FnOnce(&mut ElemWrite)->Result<K,fmt::Error>)->Result<K,fmt::Error> where Self:Sized{
+        let tail=self.render_head(w)?;
+        let res=func(w)?;
+        tail.render(w)?;
+        Ok(res)
+    }
+
     /// Render all of Self and head of other, store tail of other.
     fn chain<R: RenderElem>(self, other: R) -> Chain<Self, R>
     where

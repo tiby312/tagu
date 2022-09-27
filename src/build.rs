@@ -23,6 +23,8 @@ pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closur
     Closure { func }
 }
 
+
+
 impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> RenderElem for Closure<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
@@ -90,9 +92,6 @@ impl<D: fmt::Display, A: Attr> Single<D, A> {
             attr,
         }
     }
-    pub fn render(self,w:&mut ElemWrite)->fmt::Result{
-        w.render(self)
-    }
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     type Tail = ();
@@ -142,9 +141,6 @@ impl<D: fmt::Display, A: Attr> Elem<D, A> {
             tag: self.tag,
             attr,
         }
-    }
-    pub fn render(self,w:&mut ElemWrite)->fmt::Result{
-        w.render(self)
     }
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
