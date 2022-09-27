@@ -43,7 +43,7 @@ impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         for i in self.iter {
-            i.render_all(w)?;
+            w.render(i)?;
         }
         Ok(())
     }

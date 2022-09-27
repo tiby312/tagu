@@ -64,7 +64,8 @@ impl<'a> ElemWrite<'a> {
     }
 
     pub fn render<E: RenderElem>(&mut self, elem: E) -> fmt::Result {
-        elem.render_all(self)
+        let tail=elem.render_head(self)?;
+        tail.render(self)
     }
 
     pub fn render_with<'b, E: RenderElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
@@ -144,20 +145,22 @@ impl RenderTail for () {
 }
 
 pub fn render<W: fmt::Write, E: RenderElem>(elem: E, mut writer: W) -> fmt::Result {
-    elem.render_all(&mut ElemWrite(WriteWrap(&mut writer)))
+    ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
+
+
 pub trait RenderElem {
     type Tail: RenderTail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
-    /// Render head and tail.
-    fn render_all(self, w: &mut ElemWrite) -> fmt::Result
-    where
-        Self: Sized,
-    {
-        let next = self.render_head(w)?;
-        next.render(w)
-    }
+    // /// Render head and tail.
+    // fn render_all(self, w: &mut ElemWrite) -> fmt::Result
+    // where
+    //     Self: Sized,
+    // {
+    //     let next = self.render_head(w)?;
+    //     next.render(w)
+    // }
 
     fn render_closure<K>(self,w:&mut ElemWrite,func:impl FnOnce(&mut ElemWrite)->Result<K,fmt::Error>)->Result<K,fmt::Error> where Self:Sized{
         let tail=self.render_head(w)?;
@@ -201,7 +204,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
         let tail = top.render_head(w)?;
-        bottom.render_all(w)?;
+        w.render(bottom)?;
         Ok(tail)
     }
 }
@@ -216,25 +219,11 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
     type Tail = B::Tail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
-        top.render_all(w)?;
+        w.render(top)?;
         bottom.render_head(w)
     }
 }
 
-#[test]
-fn test_svg() {
-    let potato = build::elem("potato");
-    let chicken = build::elem("chicken").with(("a", "a").chain(("b", "b")));
-    let html = build::elem("html").with(("a", "a"));
-
-    let k = html.append(chicken.chain(potato));
-    //let k=html.append(potato).append(chicken);
-    //let html = elem("html", crate::empty_attr);
-
-    let mut w = crate::tools::upgrade_write(std::io::stdout());
-    k.render_all(&mut ElemWrite(WriteWrap(&mut w))).unwrap();
-    println!();
-}
 
 #[macro_export]
 macro_rules! attrs {
