@@ -188,8 +188,8 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
 #[test]
 fn test_svg() {
     let potato = build::elem("potato");
-    let chicken = build::elem("chicken").with_attr(("a", "a").chain(("b", "b")));
-    let html = build::elem("html").with_attr(("a", "a"));
+    let chicken = build::elem("chicken").with(("a", "a").chain(("b", "b")));
+    let html = build::elem("html").with(("a", "a"));
 
     let k = html.append(chicken.chain(potato));
     //let k=html.append(potato).append(chicken);

@@ -8,7 +8,7 @@ fn main() -> std::fmt::Result {
     let k = &mut hypermelon::stdout_fmt();
     let mut w = hypermelon::WriteWrap::new(k);
 
-    w.session(build::elem("svg").with_attr(attrs!(
+    w.session(build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
         ("viewBox", format_move!("0 0 {} {}", width, height))
     )))
@@ -17,7 +17,7 @@ fn main() -> std::fmt::Result {
             build::elem("style").append(build::raw(".test{fill:none;stroke:white;stroke-width:3}")),
         )?;
 
-        w.render(build::single("rect").with_attr(attrs!(
+        w.render(build::single("rect").with(attrs!(
             ("x1", 0),
             ("y1", 0),
             ("rx", 20),
@@ -27,13 +27,13 @@ fn main() -> std::fmt::Result {
             ("style", "fill:blue")
         )))?;
 
-        let rows = (0..50).step_by(10).map(|r| {
-            build::single("circle").with_attr(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
-        });
+        let rows = (0..50)
+            .step_by(10)
+            .map(|r| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
 
         w.render(
             build::elem("g")
-                .with_attr(("class", "test"))
+                .with(("class", "test"))
                 .append(build::from_iter(rows)),
         )
     })

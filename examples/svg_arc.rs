@@ -6,12 +6,12 @@ fn main() -> std::fmt::Result {
     let width = 500.0;
     let height = 400.0;
 
-    let svg = build::elem("svg").with_attr(attrs!(
+    let svg = build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let path1 = build::elem("path").with_attr(attrs!(
+    let path1 = build::elem("path").with(attrs!(
         ("stroke", "black"),
         ("stroke-width", 2),
         ("fill", "green"),
@@ -19,7 +19,7 @@ fn main() -> std::fmt::Result {
         build::path([M(200, 120), Q(300, 50, 400, 120), T(500, 120)])
     ));
 
-    let path2 = build::elem("path").with_attr(attrs!(
+    let path2 = build::elem("path").with(attrs!(
         ("stroke", "black"),
         ("stroke-width", 2),
         ("fill", "blue"),

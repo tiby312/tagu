@@ -16,7 +16,7 @@ fn main() -> std::fmt::Result {
     ));
 
     let table = {
-        let table = build::elem("table").with_attr(("style", format_move!("width:{}%", 100)));
+        let table = build::elem("table").with(("style", format_move!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
             build::from_closure(move |w| {

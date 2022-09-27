@@ -85,7 +85,7 @@ pub struct Single<D, A> {
 }
 
 impl<D: fmt::Display, A: Attr> Single<D, A> {
-    pub fn with_attr<AA: Attr>(self, attr: AA) -> Single<D, AA> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA> {
         Single {
             tag: self.tag,
             attr,
@@ -137,7 +137,7 @@ pub struct Elem<D, A> {
 }
 
 impl<D: fmt::Display, A: Attr> Elem<D, A> {
-    pub fn with_attr<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
         Elem {
             tag: self.tag,
             attr,
