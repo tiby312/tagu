@@ -10,12 +10,23 @@ pub mod prelude {
     pub use super::RenderElem;
 }
 
-#[must_use]
-pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
+pub struct AttrWrite<'a>(pub &'a mut dyn fmt::Write);
+impl<'a> AttrWrite<'a> {
+    pub fn render<E: Attr>(&mut self, attr: E) -> fmt::Result {
+        attr.render(self)
+    }
+}
 
-impl<'a> WriteWrap<'a> {
-    pub fn new<W: fmt::Write>(w: &'a mut W) -> Self {
-        WriteWrap(w)
+#[must_use]
+pub struct ElemWrite<'a>(pub &'a mut dyn fmt::Write);
+
+impl<'a> ElemWrite<'a> {
+    fn as_attr_write(&mut self) -> AttrWrite {
+        AttrWrite(self.0)
+    }
+
+    pub fn new(w: &'a mut dyn fmt::Write) -> Self {
+        ElemWrite(w)
     }
 
     pub fn render<E: RenderElem>(&mut self, elem: E) -> fmt::Result {
@@ -30,11 +41,11 @@ impl<'a> WriteWrap<'a> {
 #[must_use]
 pub struct SessionStart<'a, 'b, E> {
     elem: E,
-    writer: &'a mut WriteWrap<'b>,
+    writer: &'a mut ElemWrite<'b>,
 }
 
 impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
-    pub fn build(self, func: impl FnOnce(&mut WriteWrap) -> fmt::Result) -> fmt::Result {
+    pub fn build(self, func: impl FnOnce(&mut ElemWrite) -> fmt::Result) -> fmt::Result {
         let SessionStart { elem, writer } = self;
         let tail = elem.render_head(writer)?;
         func(writer)?;
@@ -42,7 +53,19 @@ impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
     }
 }
 
-impl fmt::Write for WriteWrap<'_> {
+impl fmt::Write for AttrWrite<'_> {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.0.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
+        self.0.write_char(c)
+    }
+    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
+        self.0.write_fmt(args)
+    }
+}
+impl fmt::Write for ElemWrite<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.0.write_str(s)
     }
@@ -56,7 +79,7 @@ impl fmt::Write for WriteWrap<'_> {
 }
 
 pub trait Attr {
-    fn render(self, w: &mut WriteWrap) -> std::fmt::Result;
+    fn render(self, w: &mut AttrWrite) -> std::fmt::Result;
     fn chain<R: Attr>(self, other: R) -> AttrChain<Self, R>
     where
         Self: Sized,
@@ -69,7 +92,7 @@ pub trait Attr {
 }
 
 impl Attr for () {
-    fn render(self, _: &mut WriteWrap) -> std::fmt::Result {
+    fn render(self, _: &mut AttrWrite) -> std::fmt::Result {
         Ok(())
     }
 }
@@ -81,7 +104,7 @@ pub struct AttrChain<A, B> {
     second: B,
 }
 impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
-    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
+    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         let AttrChain { first, second } = self;
         use fmt::Write;
         first.render(w)?;
@@ -91,7 +114,7 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
 }
 
 impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
-    fn render(self, w: &mut WriteWrap) -> std::fmt::Result {
+    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         let (first, second) = self;
         use fmt::Write;
         write!(crate::tools::escape_guard(&mut *w), " {}", first)?;
@@ -102,27 +125,27 @@ impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
 }
 
 pub trait RenderTail {
-    fn render(self, w: &mut WriteWrap) -> std::fmt::Result;
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
 }
 
 impl RenderTail for () {
-    fn render(self, _: &mut WriteWrap) -> std::fmt::Result {
+    fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
         Ok(())
     }
 }
 
 pub trait RenderElem {
     type Tail: RenderTail;
-    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
     fn render_with<W: fmt::Write>(self, mut w: W) -> fmt::Result
     where
         Self: Sized,
     {
-        self.render_all(&mut WriteWrap(&mut w))
+        self.render_all(&mut ElemWrite(&mut w))
     }
     /// Render head and tail.
-    fn render_all(self, w: &mut WriteWrap) -> fmt::Result
+    fn render_all(self, w: &mut ElemWrite) -> fmt::Result
     where
         Self: Sized,
     {
@@ -162,7 +185,7 @@ pub struct Append<A, B> {
 
 impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     type Tail = A::Tail;
-    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
         let tail = top.render_head(w)?;
         bottom.render_all(w)?;
@@ -178,7 +201,7 @@ pub struct Chain<A, B> {
 
 impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
     type Tail = B::Tail;
-    fn render_head(self, w: &mut WriteWrap) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
         top.render_all(w)?;
         bottom.render_head(w)
@@ -196,7 +219,7 @@ fn test_svg() {
     //let html = elem("html", crate::empty_attr);
 
     let mut w = crate::tools::upgrade_write(std::io::stdout());
-    k.render_all(&mut WriteWrap(&mut w)).unwrap();
+    k.render_all(&mut ElemWrite(&mut w)).unwrap();
     println!();
 }
 

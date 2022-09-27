@@ -6,7 +6,7 @@ fn main() -> std::fmt::Result {
     let height = 100.0;
 
     let k = &mut hypermelon::stdout_fmt();
-    let mut w = hypermelon::WriteWrap::new(k);
+    let mut w = hypermelon::ElemWrite::new(k);
 
     w.session(build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
