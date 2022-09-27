@@ -56,9 +56,7 @@ pub struct Raw<D> {
 impl<D: fmt::Display> RenderElem for Raw<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        use std::fmt::Write;
-        //TODO write one global function
-        write!(crate::tools::escape_guard(w), " {}", self.data)?;
+        write!(w.writer(), " {}", self.data)?;
         Ok(())
     }
 }
@@ -72,9 +70,8 @@ pub struct RawEscapable<D> {
 impl<D: fmt::Display> RenderElem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        use std::fmt::Write;
         //TODO write one global function
-        write!(w, " {}", self.data)?;
+        write!(w.writer_escapable(), " {}", self.data)?;
         Ok(())
     }
 }
@@ -97,13 +94,12 @@ impl<D: fmt::Display, A: Attr> Single<D, A> {
 impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        use fmt::Write;
         let Single { tag, attr } = self;
-        w.write_char('<')?;
-        write!(crate::tools::escape_guard(&mut *w), "{}", tag)?;
-        w.write_char(' ')?;
+        w.writer_escapable().write_char('<')?;
+        write!(w.writer(), "{}", tag)?;
+        w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        w.write_str(" />")?;
+        w.writer_escapable().write_str(" />")?;
         Ok(())
     }
 }
@@ -124,10 +120,9 @@ pub struct ElemTail<D> {
 
 impl<D: fmt::Display> RenderTail for ElemTail<D> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-        use fmt::Write;
-        w.write_str("</")?;
-        write!(tools::escape_guard(&mut *w), "{}", &self.tag)?;
-        w.write_char('>')
+        w.writer_escapable().write_str("</")?;
+        write!(w.writer(), "{}", &self.tag)?;
+        w.writer_escapable().write_char('>')
     }
 }
 
@@ -151,12 +146,11 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Elem { tag, attr } = self;
 
-        use fmt::Write;
-        w.write_char('<')?;
-        write!(crate::tools::escape_guard(&mut *w), "{}", tag)?;
-        w.write_char(' ')?;
+        w.writer_escapable().write_char('<')?;
+        write!(w.writer(), "{}", tag)?;
+        w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        w.write_str(" >")?;
+        w.writer_escapable().write_str(" >")?;
 
         Ok(ElemTail { tag })
     }
@@ -170,8 +164,6 @@ pub struct Path<I> {
 
 impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        use fmt::Write;
-
         w.writer().write_str(" d=\"")?;
 
         for command in self.iter {
@@ -248,7 +240,6 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 
 impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        use fmt::Write;
         w.writer().write_str(" points=\"")?;
         for (x, y) in self.iter {
             write!(w.writer(), "{},{} ", x, y)?;

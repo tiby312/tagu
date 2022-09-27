@@ -87,19 +87,6 @@ impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
     }
 }
 
-impl fmt::Write for ElemWrite<'_> {
-    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.0.write_str(s)
-    }
-
-    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
-        self.0.write_char(c)
-    }
-    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
-        self.0.write_fmt(args)
-    }
-}
-
 pub trait Attr {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result;
     fn chain<R: Attr>(self, other: R) -> AttrChain<Self, R>
