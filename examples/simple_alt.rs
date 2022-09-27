@@ -5,7 +5,7 @@ fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let k=&mut hypermelon::stdout_fmt();
+    let k = &mut hypermelon::stdout_fmt();
     let mut w = hypermelon::WriteWrap::new(k);
 
     w.session(

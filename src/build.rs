@@ -13,6 +13,7 @@ pub fn from_iter<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> Iter<I> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Closure<I> {
     func: I,
 }
@@ -29,6 +30,7 @@ impl<I: FnOnce(&mut WriteWrap) -> fmt::Result> RenderElem for Closure<I> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Iter<I> {
     iter: I,
 }
@@ -44,6 +46,7 @@ impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Raw<D> {
     data: D,
 }
@@ -59,6 +62,7 @@ impl<D: fmt::Display> RenderElem for Raw<D> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct RawEscapable<D> {
     data: D,
 }
@@ -74,6 +78,7 @@ impl<D: fmt::Display> RenderElem for RawEscapable<D> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Single<D, A> {
     tag: D,
     attr: A,
@@ -110,6 +115,7 @@ pub fn elem<D: fmt::Display>(tag: D) -> Elem<D, ()> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct ElemTail<D> {
     tag: D,
 }
@@ -124,6 +130,7 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Elem<D, A> {
     tag: D,
     attr: A,
@@ -154,6 +161,7 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Path<I> {
     iter: I,
 }
@@ -176,6 +184,7 @@ pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) ->
 }
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub struct Points<I> {
     iter: I,
 }
@@ -202,6 +211,7 @@ impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
 ///
 
 #[derive(Copy, Clone)]
+#[must_use]
 pub enum PathCommand<F> {
     /// move to
     M(F, F),

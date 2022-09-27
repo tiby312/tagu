@@ -10,6 +10,7 @@ pub mod prelude {
     pub use super::RenderElem;
 }
 
+#[must_use]
 pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
 
 impl<'a> WriteWrap<'a> {
@@ -64,6 +65,7 @@ impl Attr for () {
     }
 }
 
+#[must_use]
 #[derive(Copy, Clone)]
 pub struct AttrChain<A, B> {
     first: A,
@@ -142,7 +144,7 @@ pub trait RenderElem {
 pub fn hide_impl<R: RenderElem>(a: R) -> impl RenderElem {
     a
 }
-
+#[must_use]
 #[derive(Copy, Clone)]
 pub struct Append<A, B> {
     top: A,
@@ -158,7 +160,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
         Ok(tail)
     }
 }
-
+#[must_use]
 #[derive(Copy, Clone)]
 pub struct Chain<A, B> {
     top: A,
