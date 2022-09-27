@@ -67,7 +67,7 @@ impl<'a> ElemWrite<'a> {
         elem.render_all(self)
     }
 
-    pub fn session<'b, E: RenderElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
+    pub fn render_with<'b, E: RenderElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
         SessionStart { elem, writer: self }
     }
 }
@@ -143,16 +143,13 @@ impl RenderTail for () {
     }
 }
 
+pub fn render<W: fmt::Write, E: RenderElem>(elem: E, mut writer: W) -> fmt::Result {
+    elem.render_all(&mut ElemWrite(WriteWrap(&mut writer)))
+}
 pub trait RenderElem {
     type Tail: RenderTail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
-    fn render_with<W: fmt::Write>(self, mut w: W) -> fmt::Result
-    where
-        Self: Sized,
-    {
-        self.render_all(&mut ElemWrite(WriteWrap(&mut w)))
-    }
     /// Render head and tail.
     fn render_all(self, w: &mut ElemWrite) -> fmt::Result
     where

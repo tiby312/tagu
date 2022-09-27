@@ -33,5 +33,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(style).append(rect).append(table);
 
-    all.render_with(hypermelon::stdout_fmt())
+    hypermelon::render(all, hypermelon::stdout_fmt())
 }

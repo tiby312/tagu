@@ -29,5 +29,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(path1).append(path2);
 
-    all.render_with(hypermelon::stdout_fmt())
+    hypermelon::render(all, hypermelon::stdout_fmt())
 }
