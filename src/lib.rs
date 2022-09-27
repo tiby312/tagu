@@ -15,12 +15,26 @@ impl<'a> AttrWrite<'a> {
     pub fn render<E: Attr>(&mut self, attr: E) -> fmt::Result {
         attr.render(self)
     }
+    pub fn writer(&mut self) -> tools::EscapeGuard<&mut dyn fmt::Write> {
+        tools::escape_guard(self.0)
+    }
+
+    pub fn writer_escapable(&mut self) -> &mut dyn fmt::Write {
+        self.0
+    }
 }
 
 #[must_use]
 pub struct ElemWrite<'a>(pub &'a mut dyn fmt::Write);
 
 impl<'a> ElemWrite<'a> {
+    pub fn writer(&mut self) -> &mut dyn fmt::Write {
+        self.0
+    }
+
+    pub fn writer_escapable(&mut self) -> tools::EscapeGuard<&mut dyn fmt::Write> {
+        tools::escape_guard(self.0)
+    }
     fn as_attr_write(&mut self) -> AttrWrite {
         AttrWrite(self.0)
     }
@@ -53,18 +67,18 @@ impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
     }
 }
 
-impl fmt::Write for AttrWrite<'_> {
-    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.0.write_str(s)
-    }
+// impl fmt::Write for AttrWrite<'_> {
+//     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+//         self.0.write_str(s)
+//     }
 
-    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
-        self.0.write_char(c)
-    }
-    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
-        self.0.write_fmt(args)
-    }
-}
+//     fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
+//         self.0.write_char(c)
+//     }
+//     fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
+//         self.0.write_fmt(args)
+//     }
+// }
 impl fmt::Write for ElemWrite<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.0.write_str(s)
@@ -108,7 +122,7 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
         let AttrChain { first, second } = self;
         use fmt::Write;
         first.render(w)?;
-        w.write_str(" ")?;
+        w.writer().write_str(" ")?;
         second.render(w)
     }
 }
@@ -117,10 +131,10 @@ impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         let (first, second) = self;
         use fmt::Write;
-        write!(crate::tools::escape_guard(&mut *w), " {}", first)?;
-        w.write_str("=\"")?;
-        write!(crate::tools::escape_guard(&mut *w), "{}", second)?;
-        w.write_str("\"")
+        write!(w.writer(), " {}", first)?;
+        w.writer().write_str("=\"")?;
+        write!(w.writer(), "{}", second)?;
+        w.writer().write_str("\"")
     }
 }
 

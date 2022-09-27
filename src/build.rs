@@ -172,12 +172,12 @@ impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         use fmt::Write;
 
-        w.write_str(" d=\"")?;
+        w.writer().write_str(" d=\"")?;
 
         for command in self.iter {
-            command.write(tools::escape_guard(&mut *w))?;
+            command.write(w.writer())?;
         }
-        w.write_str("\"")
+        w.writer().write_str("\"")
     }
 }
 
@@ -193,7 +193,7 @@ pub mod sink {
     }
     impl<T: fmt::Display> PathSink2<'_, '_, T> {
         pub fn put(&mut self, command: PathCommand<T>) -> fmt::Result {
-            command.write(tools::escape_guard(&mut *self.writer))
+            command.write(self.writer.writer())
         }
     }
     impl<'a, 'b> PathSink<'a, 'b> {
@@ -210,9 +210,9 @@ pub mod sink {
     }
     impl<F: FnOnce(PathSink) -> fmt::Result> Attr for PathFlexible<F> {
         fn render(self, w: &mut AttrWrite) -> fmt::Result {
-            w.write_str(" d=\"")?;
+            w.writer().write_str(" d=\"")?;
             (self.func)(PathSink { writer: w })?;
-            w.write_str("\"")
+            w.writer().write_str("\"")
         }
     }
 
@@ -249,11 +249,11 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         use fmt::Write;
-        w.write_str(" points=\"")?;
+        w.writer().write_str(" points=\"")?;
         for (x, y) in self.iter {
-            write!(tools::escape_guard(&mut *w), "{},{} ", x, y)?;
+            write!(w.writer(), "{},{} ", x, y)?;
         }
-        w.write_str("\"")
+        w.writer().write_str("\"")
     }
 }
 
