@@ -90,6 +90,9 @@ impl<D: fmt::Display, A: Attr> Single<D, A> {
             attr,
         }
     }
+    pub fn render(self,w:&mut ElemWrite)->fmt::Result{
+        w.render(self)
+    }
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     type Tail = ();
@@ -139,6 +142,9 @@ impl<D: fmt::Display, A: Attr> Elem<D, A> {
             tag: self.tag,
             attr,
         }
+    }
+    pub fn render(self,w:&mut ElemWrite)->fmt::Result{
+        w.render(self)
     }
 }
 impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
