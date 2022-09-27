@@ -22,14 +22,23 @@ impl<'a> WriteWrap<'a> {
         elem.render_all(self)
     }
 
-    pub fn session<E: RenderElem>(
-        &mut self,
-        elem: E,
-        func: impl FnOnce(&mut Self) -> fmt::Result,
-    ) -> fmt::Result {
-        let tail = elem.render_head(self)?;
-        func(self)?;
-        tail.render(self)
+    pub fn session<'b, E: RenderElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
+        SessionStart { elem, writer: self }
+    }
+}
+
+#[must_use]
+pub struct SessionStart<'a, 'b, E> {
+    elem: E,
+    writer: &'a mut WriteWrap<'b>,
+}
+
+impl<'a, 'b, E: RenderElem> SessionStart<'a, 'b, E> {
+    pub fn build(self, func: impl FnOnce(&mut WriteWrap) -> fmt::Result) -> fmt::Result {
+        let SessionStart { elem, writer } = self;
+        let tail = elem.render_head(writer)?;
+        func(writer)?;
+        tail.render(writer)
     }
 }
 
