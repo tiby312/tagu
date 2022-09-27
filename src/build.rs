@@ -2,6 +2,21 @@ use std::fmt::Write;
 
 use super::*;
 
+#[derive(Copy,Clone)]
+#[must_use]
+pub struct AttrClosure<I>{
+    func:I
+}
+impl<F:FnOnce(&mut AttrWrite)->fmt::Result> Attr for AttrClosure<F>{
+    fn render(self,w:&mut AttrWrite)->fmt::Result{
+        (self.func)(w)
+    }
+}
+pub fn attr_from_closure<F:FnOnce(&mut AttrWrite)->fmt::Result>(func:F)->AttrClosure<F>{
+    AttrClosure{func}
+}
+
+
 pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
     Raw { data }
 }
