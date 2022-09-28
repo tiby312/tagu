@@ -48,11 +48,11 @@ impl<'a> AttrWrite<'a> {
 pub struct ElemWrite<'a>(WriteWrap<'a>);
 
 impl<'a> ElemWrite<'a> {
-    pub fn writer(&mut self) -> WriteWrap {
+    pub fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
     }
 
-    pub fn writer_escapable(&mut self) -> tools::EscapeGuard<WriteWrap> {
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
         tools::escape_guard(self.0.borrow_mut())
     }
     fn as_attr_write(&mut self) -> AttrWrite {
@@ -123,16 +123,6 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
     }
 }
 
-impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
-    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        let (first, second) = self;
-        use fmt::Write;
-        write!(w.writer(), " {}", first)?;
-        w.writer().write_str("=\"")?;
-        write!(w.writer(), "{}", second)?;
-        w.writer().write_str("\"")
-    }
-}
 
 pub trait RenderTail {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result;

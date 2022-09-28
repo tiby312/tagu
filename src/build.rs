@@ -2,6 +2,18 @@ use std::fmt::Write;
 
 use super::*;
 
+
+impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
+    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
+        let (first, second) = self;
+        write!(w.writer(), " {}", first)?;
+        w.writer_escapable().write_str("=\"")?;
+        write!(w.writer(), "{}", second)?;
+        w.writer_escapable().write_str("\"")
+    }
+}
+
+
 #[derive(Copy,Clone)]
 #[must_use]
 pub struct AttrClosure<I>{
@@ -53,6 +65,7 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> RenderElem for Closure<I> {
 pub struct Iter<I> {
     iter: I,
 }
+
 
 impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
     type Tail = ();
@@ -181,12 +194,12 @@ pub struct Path<I> {
 
 impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Attr for Path<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        w.writer().write_str(" d=\"")?;
+        w.writer_escapable().write_str(" d=\"")?;
 
         for command in self.iter {
             command.write(w.writer())?;
         }
-        w.writer().write_str("\"")
+        w.writer_escapable().write_str("\"")
     }
 }
 
@@ -219,9 +232,9 @@ pub mod sink {
     }
     impl<F: FnOnce(PathSink) -> fmt::Result> Attr for PathFlexible<F> {
         fn render(self, w: &mut AttrWrite) -> fmt::Result {
-            w.writer().write_str(" d=\"")?;
+            w.writer_escapable().write_str(" d=\"")?;
             (self.func)(PathSink { writer: w })?;
-            w.writer().write_str("\"")
+            w.writer_escapable().write_str("\"")
         }
     }
 
@@ -257,11 +270,11 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 
 impl<I: IntoIterator<Item = (D, D)>, D: fmt::Display> Attr for Points<I> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        w.writer().write_str(" points=\"")?;
+        w.writer_escapable().write_str(" points=\"")?;
         for (x, y) in self.iter {
             write!(w.writer(), "{},{} ", x, y)?;
         }
-        w.writer().write_str("\"")
+        w.writer_escapable().write_str("\"")
     }
 }
 
