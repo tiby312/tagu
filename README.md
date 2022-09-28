@@ -19,4 +19,3 @@ Basically its a tradeoff between more flexibility in writing building blocks (if
 the build blocks around.
 
 
-TODO escape protection for users who implement ElemWrite or Attr Write?
