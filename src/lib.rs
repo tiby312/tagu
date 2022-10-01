@@ -134,7 +134,7 @@ impl RenderTail for () {
     }
 }
 
-pub fn render<W: fmt::Write, E: RenderElem>(elem: E, mut writer: W) -> fmt::Result {
+pub fn render<E: RenderElem,W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 
