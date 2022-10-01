@@ -64,7 +64,7 @@ impl<'a> ElemWrite<'a> {
     }
 
     pub fn render<E: RenderElem>(&mut self, elem: E) -> fmt::Result {
-        let tail=elem.render_head(self)?;
+        let tail = elem.render_head(self)?;
         tail.render(self)
     }
 
@@ -123,7 +123,6 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
     }
 }
 
-
 pub trait RenderTail {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
 }
@@ -134,10 +133,9 @@ impl RenderTail for () {
     }
 }
 
-pub fn render<E: RenderElem,W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
+pub fn render<E: RenderElem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
-
 
 pub trait RenderElem {
     type Tail: RenderTail;
@@ -152,9 +150,16 @@ pub trait RenderElem {
     //     next.render(w)
     // }
 
-    fn render_closure<K>(self,w:&mut ElemWrite,func:impl FnOnce(&mut ElemWrite)->Result<K,fmt::Error>)->Result<K,fmt::Error> where Self:Sized{
-        let tail=self.render_head(w)?;
-        let res=func(w)?;
+    fn render_closure<K>(
+        self,
+        w: &mut ElemWrite,
+        func: impl FnOnce(&mut ElemWrite) -> Result<K, fmt::Error>,
+    ) -> Result<K, fmt::Error>
+    where
+        Self: Sized,
+    {
+        let tail = self.render_head(w)?;
+        let res = func(w)?;
         tail.render(w)?;
         Ok(res)
     }
@@ -214,7 +219,6 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
     }
 }
 
-
 #[macro_export]
 macro_rules! attrs {
     ($a:expr)=>{
@@ -255,49 +259,44 @@ pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
     tools::upgrade_write(std::io::stdout())
 }
 
-
-
-
 ///
 /// If you need to render something over, and over again,
 /// you can instead buffer it to a string using this struct
 /// for better performance at the cost of more memory.
-/// 
+///
 /// Notice that RenderElem is only implemented for a &BufferedElem.
-/// 
-pub struct BufferedElem{
-    head:String,
-    tail:String
+///
+pub struct BufferedElem {
+    head: String,
+    tail: String,
 }
 
-impl BufferedElem{
-    pub fn new<E:RenderElem>(elem:E)->Result<Self,fmt::Error>{
-        let mut head=String::new();
-        let mut tail=String::new();
-        let t=elem.render_head(&mut ElemWrite::new(&mut head))?;
+impl BufferedElem {
+    pub fn new<E: RenderElem>(elem: E) -> Result<Self, fmt::Error> {
+        let mut head = String::new();
+        let mut tail = String::new();
+        let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
         t.render(&mut ElemWrite::new(&mut tail))?;
-        Ok(BufferedElem{
-            head,
-            tail
-        })
+        head.shrink_to_fit();
+        tail.shrink_to_fit();
+        Ok(BufferedElem { head, tail })
     }
 }
 
-pub struct BufferedTail<'a>{
-    tail:&'a str
+pub struct BufferedTail<'a> {
+    tail: &'a str,
 }
-impl<'a> RenderTail for BufferedTail<'a>{
+impl<'a> RenderTail for BufferedTail<'a> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(w.writer_escapable(),"{}",self.tail)
+        write!(w.writer_escapable(), "{}", self.tail)
     }
 }
-impl<'a> RenderElem for &'a BufferedElem{
-    type Tail=BufferedTail<'a>;
+impl<'a> RenderElem for &'a BufferedElem {
+    type Tail = BufferedTail<'a>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         use std::fmt::Write;
-        write!(w.writer_escapable(),"{}",self.head)?;
-        Ok(BufferedTail{tail:&self.tail})
-
+        write!(w.writer_escapable(), "{}", self.head)?;
+        Ok(BufferedTail { tail: &self.tail })
     }
 }

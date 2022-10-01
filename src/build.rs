@@ -2,7 +2,6 @@ use std::fmt::Write;
 
 use super::*;
 
-
 impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         let (first, second) = self;
@@ -13,21 +12,19 @@ impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
     }
 }
 
-
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 #[must_use]
-pub struct AttrClosure<I>{
-    func:I
+pub struct AttrClosure<I> {
+    func: I,
 }
-impl<F:FnOnce(&mut AttrWrite)->fmt::Result> Attr for AttrClosure<F>{
-    fn render(self,w:&mut AttrWrite)->fmt::Result{
+impl<F: FnOnce(&mut AttrWrite) -> fmt::Result> Attr for AttrClosure<F> {
+    fn render(self, w: &mut AttrWrite) -> fmt::Result {
         (self.func)(w)
     }
 }
-pub fn attr_from_closure<F:FnOnce(&mut AttrWrite)->fmt::Result>(func:F)->AttrClosure<F>{
-    AttrClosure{func}
+pub fn attr_from_closure<F: FnOnce(&mut AttrWrite) -> fmt::Result>(func: F) -> AttrClosure<F> {
+    AttrClosure { func }
 }
-
 
 pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
     Raw { data }
@@ -50,8 +47,6 @@ pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closur
     Closure { func }
 }
 
-
-
 impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> RenderElem for Closure<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
@@ -65,7 +60,6 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> RenderElem for Closure<I> {
 pub struct Iter<I> {
     iter: I,
 }
-
 
 impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
     type Tail = ();
@@ -90,8 +84,6 @@ impl<D: fmt::Display> RenderElem for Raw<D> {
         Ok(())
     }
 }
-
-
 
 #[derive(Copy, Clone)]
 #[must_use]
