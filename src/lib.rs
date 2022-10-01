@@ -300,3 +300,34 @@ impl<'a> RenderElem for &'a BufferedElem {
         Ok(BufferedTail { tail: &self.tail })
     }
 }
+
+
+pub struct DisplayEscapable<D,B>{
+    start:D,
+    end:B
+}
+pub struct DisplayEscapableTail<'a,D>{
+    end:&'a D
+}
+impl<A:fmt::Display,B:fmt::Display> DisplayEscapable<A,B>{
+    pub fn new(head:A,tail:B)->Self{
+        DisplayEscapable{
+            start:head,
+            end:tail
+        }
+    }
+}
+impl<'b,D:fmt::Display> RenderTail for DisplayEscapableTail<'b,D> {
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(w.writer_escapable(), "{}", self.end)
+    }
+}
+impl<'a,A:fmt::Display,B:fmt::Display> RenderElem for &'a DisplayEscapable<A,B> {
+    type Tail = DisplayEscapableTail<'a,B>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        use std::fmt::Write;
+        write!(w.writer_escapable(), "{}", self.start)?;
+        Ok(DisplayEscapableTail { end: &self.end })
+    }
+}
