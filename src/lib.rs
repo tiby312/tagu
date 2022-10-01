@@ -254,3 +254,50 @@ macro_rules! elems {
 pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
     tools::upgrade_write(std::io::stdout())
 }
+
+
+
+
+///
+/// If you need to render something over, and over again,
+/// you can instead buffer it to a string using this struct
+/// for better performance at the cost of more memory.
+/// 
+/// Notice that RenderElem is only implemented for a &BufferedElem.
+/// 
+pub struct BufferedElem{
+    head:String,
+    tail:String
+}
+
+impl BufferedElem{
+    pub fn new<E:RenderElem>(elem:E)->Result<Self,fmt::Error>{
+        let mut head=String::new();
+        let mut tail=String::new();
+        let t=elem.render_head(&mut ElemWrite::new(&mut head))?;
+        t.render(&mut ElemWrite::new(&mut tail))?;
+        Ok(BufferedElem{
+            head,
+            tail
+        })
+    }
+}
+
+pub struct BufferedTail<'a>{
+    tail:&'a str
+}
+impl<'a> RenderTail for BufferedTail<'a>{
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(w.writer_escapable(),"{}",self.tail)
+    }
+}
+impl<'a> RenderElem for &'a BufferedElem{
+    type Tail=BufferedTail<'a>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        use std::fmt::Write;
+        write!(w.writer_escapable(),"{}",self.head)?;
+        Ok(BufferedTail{tail:&self.tail})
+
+    }
+}
