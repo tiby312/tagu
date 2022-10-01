@@ -13,8 +13,7 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let style =
-        build::elem("style").append(build::raw(".test{fill:none;stroke:white;stroke-width:3}"));
+    let style = build::elem("style").append(".test{fill:none;stroke:white;stroke-width:3}");
 
     let rect = build::single("rect").with(attrs!(
         ("x1", 0),

@@ -26,15 +26,15 @@ pub fn attr_from_closure<F: FnOnce(&mut AttrWrite) -> fmt::Result>(func: F) -> A
     AttrClosure { func }
 }
 
-pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
-    Raw { data }
-}
+// pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
+//     Raw { data }
+// }
 
 pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
     RawEscapable { data }
 }
 
-pub fn from_iter<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> Iter<I> {
+pub fn from_iter<I: Iterator<Item = R>, R: Elem>(iter: I) -> Iter<I> {
     Iter { iter }
 }
 
@@ -47,7 +47,7 @@ pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closur
     Closure { func }
 }
 
-impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> RenderElem for Closure<I> {
+impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         (self.func)(w)?;
@@ -61,7 +61,7 @@ pub struct Iter<I> {
     iter: I,
 }
 
-impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
+impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         for i in self.iter {
@@ -71,16 +71,24 @@ impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for Iter<I> {
     }
 }
 
-#[derive(Copy, Clone)]
-#[must_use]
-pub struct Raw<D> {
-    data: D,
-}
+// #[derive(Copy, Clone)]
+// #[must_use]
+// pub struct Raw<D> {
+//     data: D,
+// }
 
-impl<D: fmt::Display> RenderElem for Raw<D> {
+// impl<D: fmt::Display> RenderElem for Raw<D> {
+//     type Tail = ();
+//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+//         write!(w.writer(), " {}", self.data)?;
+//         Ok(())
+//     }
+// }
+
+impl<D: fmt::Display> Elem for D {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        write!(w.writer(), " {}", self.data)?;
+        write!(w.writer(), " {}", self)?;
         Ok(())
     }
 }
@@ -91,7 +99,7 @@ pub struct RawEscapable<D> {
     data: D,
 }
 
-impl<D: fmt::Display> RenderElem for RawEscapable<D> {
+impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //TODO write one global function
@@ -115,7 +123,7 @@ impl<D: fmt::Display, A: Attr> Single<D, A> {
         }
     }
 }
-impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
+impl<D: fmt::Display, A: Attr> Elem for Single<D, A> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Single { tag, attr } = self;
@@ -132,8 +140,8 @@ pub fn single<D: fmt::Display>(tag: D) -> Single<D, ()> {
     Single { tag, attr: () }
 }
 
-pub fn elem<D: fmt::Display>(tag: D) -> Elem<D, ()> {
-    Elem { tag, attr: () }
+pub fn elem<D: fmt::Display>(tag: D) -> Element<D, ()> {
+    Element { tag, attr: () }
 }
 
 #[derive(Copy, Clone)]
@@ -152,23 +160,23 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
 
 #[derive(Copy, Clone)]
 #[must_use]
-pub struct Elem<D, A> {
+pub struct Element<D, A> {
     tag: D,
     attr: A,
 }
 
-impl<D: fmt::Display, A: Attr> Elem<D, A> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
-        Elem {
+impl<D: fmt::Display, A: Attr> Element<D, A> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AA> {
+        Element {
             tag: self.tag,
             attr,
         }
     }
 }
-impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
+impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
     type Tail = ElemTail<D>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let Elem { tag, attr } = self;
+        let Element { tag, attr } = self;
 
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}", tag)?;
