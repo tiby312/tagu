@@ -26,9 +26,7 @@ pub fn attr_from_closure<F: FnOnce(&mut AttrWrite) -> fmt::Result>(func: F) -> A
     AttrClosure { func }
 }
 
-// pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
-//     Raw { data }
-// }
+
 
 pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
     RawEscapable { data }
@@ -88,34 +86,46 @@ impl<D: fmt::Display> Elem for RawEscapable<D> {
 
 #[derive(Copy, Clone)]
 #[must_use]
-pub struct Single<D, A> {
+pub struct Single<D, A,K,Z> {
     tag: D,
     attr: A,
+    start:K,
+    ending:Z
 }
 
-impl<D: fmt::Display, A: Attr> Single<D, A> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA> {
+impl<D: fmt::Display, A: Attr,K,Z> Single<D, A,K,Z> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA,K,Z> {
         Single {
             tag: self.tag,
             attr,
+            ending:self.ending,
+            start:self.start
         }
     }
+    pub fn with_ending<ZZ:fmt::Display>(self,ending:ZZ)->Single<D,A,K,ZZ>{
+        Single { tag: self.tag, attr:self.attr, ending ,start:self.start}
+    }
+    pub fn with_start<KK:fmt::Display>(self,start:KK)->Single<D,A,KK,Z>{
+        Single { tag: self.tag, attr:self.attr, ending:self.ending ,start}
+    }
+    
 }
-impl<D: fmt::Display, A: Attr> Elem for Single<D, A> {
+impl<D: fmt::Display, A: Attr,K:fmt::Display,Z:fmt::Display> Elem for Single<D, A,K,Z> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let Single { tag, attr } = self;
+        let Single { tag, attr,start,ending } = self;
         w.writer_escapable().write_char('<')?;
-        write!(w.writer(), "{}", tag)?;
+        write!(w.writer(), "{} {}",start, tag)?;
         w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        w.writer_escapable().write_str(" />")?;
+        write!(w.writer()," {}",ending)?;
+        w.writer_escapable().write_str(">")?;
         Ok(())
     }
 }
 
-pub fn single<D: fmt::Display>(tag: D) -> Single<D, ()> {
-    Single { tag, attr: () }
+pub fn single<D: fmt::Display>(tag: D) -> Single<D, (),&'static str,&'static str> {
+    Single { tag, attr: () ,start:"",ending:"/"}
 }
 
 pub fn elem<D: fmt::Display>(tag: D) -> Element<D, ()> {
