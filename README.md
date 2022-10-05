@@ -5,18 +5,6 @@ hypermelon provides the same capability as tagger, but additionally
 has an api that lets you use adaptors to keep chaining and appending 
 elements together. 
 
-# Which method to use?
-
-You can append elements via building of long adaptor chains, or you can render
-elements to a writer on the fly. There are pros and cons to both. With chaining,
-you don't have to worry about handling errors because nothing actually gets written out
-as you're chaining. A downside is that you can't build elements differently based on a condition
-as you go. This is because if you have an if statement, for example, the types returned by each block have to be the same.
-So you can't have one block return 2 elements, and another block return 3 elements.
-
-Basically its a tradeoff between more flexibility in writing building blocks (if conditions/loops etc), and flexibility in passing
-the build blocks around. You can mix and match because you can make elements from closures and then chain those elements together.
-
 
 ## Example
 
@@ -62,3 +50,24 @@ fn main() -> std::fmt::Result {
 ### Output
 
 <img src="./assets/svg_example.svg" alt="demo">
+
+
+
+
+### Which method to use?
+
+You can append elements via building of long adaptor chains, or you can render
+elements to a writer on the fly. There are pros and cons to both. With chaining,
+you don't have to worry about handling errors because nothing actually gets written out
+as you're chaining. A downside is that you can't build elements differently based on a condition
+as you go. This is because if you have an if statement, for example, the types returned by each block have to be the same.
+So you can't have one block return 2 elements, and another block return 3 elements.
+
+Basically its a tradeoff between more flexibility in writing building blocks (if conditions/loops etc), and flexibility in passing
+the build blocks around. You can mix and match because you can make elements from closures and then chain those elements together.
+
+
+### Is there escape XML protection?
+
+Attributes are fed through a escape protectors. Tag names are fed through escape protectors. User can bypass this by using `build::raw_escapable()` and `AttrWrite::writer_escapable()`. The element chaining system works by having each element implement a render_head(), and a render_tail() function. This means a user can easily only call render_head() and deliberately not call render_tail().
+
