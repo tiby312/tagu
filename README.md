@@ -1,9 +1,4 @@
-
-
-So the tagger crate is a nice and simple crate and might be good enough for your usecase.
-hypermelon provides the same capability as tagger, but additionally
-has an api that lets you use adaptors to keep chaining and appending 
-elements together. 
+Build xml / html / svg programmatically by chaining structs together or with closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
 
 
 ## Example
