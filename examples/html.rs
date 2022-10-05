@@ -1,7 +1,10 @@
 use hypermelon::build;
 use hypermelon::prelude::*;
 fn main() -> std::fmt::Result {
-    let html=build::single("DOCTYPE html").with_start("!").with_ending("").chain(build::elem("html"));
+    let html = build::single("DOCTYPE html")
+        .with_start("!")
+        .with_ending("")
+        .chain(build::elem("html"));
 
     let style = build::elem("style").append(
         "table, th, td {
