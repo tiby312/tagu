@@ -1,4 +1,4 @@
-Build xml / html / svg programmatically by chaining structs together or with closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
+Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
 
 
 ## Example
@@ -66,3 +66,8 @@ the build blocks around. You can mix and match because you can make elements fro
 
 Attributes are fed through a escape protectors. Tag names are fed through escape protectors. User can bypass this by using `build::raw_escapable()` and `AttrWrite::writer_escapable()`. The element chaining system works by having each element implement a render_head(), and a render_tail() function. This means a user can easily only call render_head() and deliberately not call render_tail().
 
+
+### What happened to the tagger crate?
+
+I left the tagger crate alone and made this into a brand new crate because while it does have all
+the functionality of tagger, it is more complicated. Some people might just like the simplicity of tagger. However, I recommend people choose hypermelon over tagger, because I think its a lot more flexible. The ability to pass around element chains like structs is really useful in my experience.
