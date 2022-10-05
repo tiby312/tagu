@@ -71,27 +71,6 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
-// #[derive(Copy, Clone)]
-// #[must_use]
-// pub struct Raw<D> {
-//     data: D,
-// }
-
-// impl<D: fmt::Display> RenderElem for Raw<D> {
-//     type Tail = ();
-//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-//         write!(w.writer(), " {}", self.data)?;
-//         Ok(())
-//     }
-// }
-
-impl<D: fmt::Display> Elem for D {
-    type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        write!(w.writer(), " {}", self)?;
-        Ok(())
-    }
-}
 
 #[derive(Copy, Clone)]
 #[must_use]

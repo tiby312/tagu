@@ -30,6 +30,64 @@ impl<'a> ElemWrite<'a> {
     }
 }
 
+
+
+
+pub trait RenderElem{
+    fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
+    fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
+    
+}
+
+
+pub struct DynamicElem<E:Elem>{
+    head:Option<E>,
+    tail:Option<E::Tail>
+}
+
+impl<E:Elem>  DynamicElem<E>{
+    pub fn new(elem:E)->DynamicElem<E>{
+        DynamicElem { head: Some(elem), tail: None }
+    }
+    pub fn as_dyn(&mut self)->DynElem{
+        DynElem{elem:self}
+    }
+}
+impl<E:Elem> RenderElem for DynamicElem<E>{
+    fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>{
+        let tail=self.head.take().unwrap().render_head(w)?;
+        self.tail=Some(tail);
+        Ok(())
+    }
+    fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>{
+        self.tail.take().unwrap().render(w)
+    }
+}
+
+
+pub struct DynElemTail<'a>{
+    elem:&'a mut dyn RenderElem
+}
+impl<'a> RenderTail for DynElemTail<'a>{
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        self.elem.render_tail(w)
+    }
+}
+pub struct DynElem<'a>{
+    elem:&'a mut dyn RenderElem
+}
+
+impl<'a> Elem for DynElem<'a>{
+    type Tail=DynElemTail<'a>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>{
+        self.elem.render_head(w)?;
+        Ok(DynElemTail{elem:self.elem})
+    }
+}
+
+
+
+
 pub trait Elem {
     type Tail: RenderTail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
@@ -131,5 +189,17 @@ impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
         let tail = elem.render_head(writer)?;
         func(writer)?;
         tail.render(writer)
+    }
+}
+
+
+
+use fmt::Write;
+
+impl<D: fmt::Display> Elem for D {
+    type Tail = ();
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        write!(w.writer(), " {}", self)?;
+        Ok(())
     }
 }
