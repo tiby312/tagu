@@ -47,6 +47,10 @@ fn main() -> std::fmt::Result {
 <img src="./assets/svg_example.svg" alt="demo">
 
 
+See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
+
+
+
 
 
 ### Which method to use?
