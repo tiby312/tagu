@@ -1,5 +1,8 @@
 use super::*;
 
+///
+/// Render elements
+///
 #[must_use]
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>);
 
@@ -44,11 +47,17 @@ impl<'a> ElemWrite<'a> {
     }
 }
 
+///
+/// Alternative trait for Elem that is friendly to dyn trait.
+///
 pub trait RenderElem {
     fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
     fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
 }
 
+///
+/// A element that can be hidden behind a dyn trait.
+///
 pub struct DynamicElem<E: Elem> {
     head: Option<E>,
     tail: Option<E::Tail>,
@@ -76,6 +85,9 @@ impl<E: Elem> RenderElem for DynamicElem<E> {
     }
 }
 
+///
+/// Tail to DynElem
+///
 pub struct DynElemTail<'a> {
     elem: &'a mut dyn RenderElem,
 }
@@ -96,18 +108,12 @@ impl<'a> Elem for DynElem<'a> {
     }
 }
 
+///
+/// Main building block.
+///
 pub trait Elem {
     type Tail: RenderTail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
-
-    // /// Render head and tail.
-    // fn render_all(self, w: &mut ElemWrite) -> fmt::Result
-    // where
-    //     Self: Sized,
-    // {
-    //     let next = self.render_head(w)?;
-    //     next.render(w)
-    // }
 
     fn render_closure<K>(
         self,
@@ -143,6 +149,9 @@ pub trait Elem {
     }
 }
 
+///
+/// Append an element to another adaptor
+///
 #[must_use]
 #[derive(Copy, Clone)]
 pub struct Append<A, B> {
@@ -159,6 +168,10 @@ impl<A: Elem, B: Elem> Elem for Append<A, B> {
         Ok(tail)
     }
 }
+
+///
+/// Chain two elements adaptor
+///
 #[must_use]
 #[derive(Copy, Clone)]
 pub struct Chain<A, B> {
@@ -175,6 +188,9 @@ impl<A: Elem, B: Elem> Elem for Chain<A, B> {
     }
 }
 
+///
+/// Tail to elem trait.
+///
 pub trait RenderTail {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
 }
@@ -185,6 +201,9 @@ impl RenderTail for () {
     }
 }
 
+///
+/// Used to start a closure session
+///
 #[must_use]
 pub struct SessionStart<'a, 'b, E> {
     elem: E,

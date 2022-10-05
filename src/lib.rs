@@ -14,22 +14,30 @@ pub mod prelude {
     pub use super::format_move;
 }
 
+///
+/// Render an element to a write
+///
 pub fn render<E: Elem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 
-pub fn hide_impl<R: Elem>(a: R) -> impl Elem {
-    a
-}
-
+///
+/// An std out that implements fmt::Write
+///
 pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
     tools::upgrade_write(std::io::stdout())
 }
 
+///
+/// call Elem::append() without having to have Elem in scope.
+///
 pub fn append<R: Elem, K: Elem>(a: R, k: K) -> Append<R, K> {
     a.append(k)
 }
 
+///
+/// Chain together a list of attrs
+///
 #[macro_export]
 macro_rules! attrs {
     ($a:expr)=>{
@@ -48,6 +56,9 @@ macro_rules! attrs {
     };
 }
 
+///
+/// Chain together a list of elements
+///
 #[macro_export]
 macro_rules! elems {
     ($a:expr)=>{
