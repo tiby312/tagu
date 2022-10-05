@@ -115,7 +115,7 @@ impl<D: fmt::Display, A: Attr,K:fmt::Display,Z:fmt::Display> Elem for Single<D, 
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Single { tag, attr,start,ending } = self;
         w.writer_escapable().write_char('<')?;
-        write!(w.writer(), "{} {}",start, tag)?;
+        write!(w.writer(), "{}{}",start, tag)?;
         w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
         write!(w.writer()," {}",ending)?;
