@@ -1,221 +1,33 @@
 pub mod build;
 pub mod tools;
 use std::fmt;
+pub mod attr;
+pub mod elem;
+use attr::*;
 
+use elem::*;
+use tools::WriteWrap;
 pub mod prelude {
     pub use super::attrs;
+    pub use super::elem::Elem;
     pub use super::elems;
     pub use super::format_move;
-    pub use super::Elem;
-}
-
-pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
-
-impl<'a> WriteWrap<'a> {
-    pub fn borrow_mut(&mut self) -> WriteWrap {
-        WriteWrap(self.0)
-    }
-}
-impl fmt::Write for WriteWrap<'_> {
-    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.0.write_str(s)
-    }
-
-    fn write_char(&mut self, c: char) -> Result<(), fmt::Error> {
-        self.0.write_char(c)
-    }
-    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
-        self.0.write_fmt(args)
-    }
-}
-
-pub struct AttrWrite<'a>(WriteWrap<'a>);
-impl<'a> AttrWrite<'a> {
-    pub fn render<E: Attr>(&mut self, attr: E) -> fmt::Result {
-        attr.render(self)
-    }
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
-        tools::escape_guard(self.0.borrow_mut())
-    }
-
-    pub fn writer_escapable(&mut self) -> WriteWrap {
-        self.0.borrow_mut()
-    }
-}
-
-#[must_use]
-pub struct ElemWrite<'a>(WriteWrap<'a>);
-
-impl<'a> ElemWrite<'a> {
-    pub fn writer_escapable(&mut self) -> WriteWrap {
-        self.0.borrow_mut()
-    }
-
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
-        tools::escape_guard(self.0.borrow_mut())
-    }
-    fn as_attr_write(&mut self) -> AttrWrite {
-        AttrWrite(self.0.borrow_mut())
-    }
-
-    pub fn new(w: &'a mut dyn fmt::Write) -> Self {
-        ElemWrite(WriteWrap(w))
-    }
-
-    pub fn render<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let tail = elem.render_head(self)?;
-        tail.render(self)
-    }
-
-    pub fn render_with<'b, E: Elem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
-        SessionStart { elem, writer: self }
-    }
-}
-
-#[must_use]
-pub struct SessionStart<'a, 'b, E> {
-    elem: E,
-    writer: &'a mut ElemWrite<'b>,
-}
-
-impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
-    pub fn build(self, func: impl FnOnce(&mut ElemWrite) -> fmt::Result) -> fmt::Result {
-        let SessionStart { elem, writer } = self;
-        let tail = elem.render_head(writer)?;
-        func(writer)?;
-        tail.render(writer)
-    }
-}
-
-pub trait Attr {
-    fn render(self, w: &mut AttrWrite) -> std::fmt::Result;
-    fn chain<R: Attr>(self, other: R) -> AttrChain<Self, R>
-    where
-        Self: Sized,
-    {
-        AttrChain {
-            first: self,
-            second: other,
-        }
-    }
-}
-
-impl Attr for () {
-    fn render(self, _: &mut AttrWrite) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-#[must_use]
-#[derive(Copy, Clone)]
-pub struct AttrChain<A, B> {
-    first: A,
-    second: B,
-}
-impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
-    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
-        let AttrChain { first, second } = self;
-        use fmt::Write;
-        first.render(w)?;
-        w.writer().write_str(" ")?;
-        second.render(w)
-    }
-}
-
-pub trait RenderTail {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
-}
-
-impl RenderTail for () {
-    fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
-        Ok(())
-    }
 }
 
 pub fn render<E: Elem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 
-pub trait Elem {
-    type Tail: RenderTail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
-
-    // /// Render head and tail.
-    // fn render_all(self, w: &mut ElemWrite) -> fmt::Result
-    // where
-    //     Self: Sized,
-    // {
-    //     let next = self.render_head(w)?;
-    //     next.render(w)
-    // }
-
-    fn render_closure<K>(
-        self,
-        w: &mut ElemWrite,
-        func: impl FnOnce(&mut ElemWrite) -> Result<K, fmt::Error>,
-    ) -> Result<K, fmt::Error>
-    where
-        Self: Sized,
-    {
-        let tail = self.render_head(w)?;
-        let res = func(w)?;
-        tail.render(w)?;
-        Ok(res)
-    }
-
-    /// Render all of Self and head of other, store tail of other.
-    fn chain<R: Elem>(self, other: R) -> Chain<Self, R>
-    where
-        Self: Sized,
-    {
-        Chain {
-            top: self,
-            bottom: other,
-        }
-    }
-
-    /// Render head of Self, and all of other, store tail of self.
-    fn append<R: Elem>(self, bottom: R) -> Append<Self, R>
-    where
-        Self: Sized,
-    {
-        Append { top: self, bottom }
-    }
-}
-
 pub fn hide_impl<R: Elem>(a: R) -> impl Elem {
     a
 }
-#[must_use]
-#[derive(Copy, Clone)]
-pub struct Append<A, B> {
-    top: A,
-    bottom: B,
+
+pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
+    tools::upgrade_write(std::io::stdout())
 }
 
-impl<A: Elem, B: Elem> Elem for Append<A, B> {
-    type Tail = A::Tail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let Append { top, bottom } = self;
-        let tail = top.render_head(w)?;
-        w.render(bottom)?;
-        Ok(tail)
-    }
-}
-#[must_use]
-#[derive(Copy, Clone)]
-pub struct Chain<A, B> {
-    top: A,
-    bottom: B,
-}
-
-impl<A: Elem, B: Elem> Elem for Chain<A, B> {
-    type Tail = B::Tail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let Chain { top, bottom } = self;
-        w.render(top)?;
-        bottom.render_head(w)
-    }
+pub fn append<R: Elem, K: Elem>(a: R, k: K) -> Append<R, K> {
+    a.append(k)
 }
 
 #[macro_export]
@@ -225,7 +37,7 @@ macro_rules! attrs {
     };
     ( $a:expr,$( $x:expr ),* ) => {
         {
-            use $crate::Attr;
+            use $crate::attr::Attr;
             let mut a=$a;
             $(
                 let a=a.chain($x);
@@ -243,7 +55,7 @@ macro_rules! elems {
     };
     ( $a:expr,$( $x:expr ),* ) => {
         {
-            use $crate::Elem;
+            use $crate::elem::Elem;
             let mut a=$a;
             $(
                 let a=a.chain($x);
@@ -252,84 +64,4 @@ macro_rules! elems {
             a
         }
     };
-}
-
-pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
-    tools::upgrade_write(std::io::stdout())
-}
-
-///
-/// If you need to render something over, and over again,
-/// you can instead buffer it to a string using this struct
-/// for better performance at the cost of more memory.
-///
-/// Notice that RenderElem is only implemented for a &BufferedElem.
-///
-pub struct BufferedElem {
-    head: String,
-    tail: String,
-}
-
-impl BufferedElem {
-    pub fn new<E: Elem>(elem: E) -> Result<Self, fmt::Error> {
-        let mut head = String::new();
-        let mut tail = String::new();
-        let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
-        t.render(&mut ElemWrite::new(&mut tail))?;
-        head.shrink_to_fit();
-        tail.shrink_to_fit();
-        Ok(BufferedElem { head, tail })
-    }
-}
-
-pub struct BufferedTail<'a> {
-    tail: &'a str,
-}
-impl<'a> RenderTail for BufferedTail<'a> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-        use std::fmt::Write;
-        write!(w.writer_escapable(), "{}", self.tail)
-    }
-}
-impl<'a> Elem for &'a BufferedElem {
-    type Tail = BufferedTail<'a>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        use std::fmt::Write;
-        write!(w.writer_escapable(), "{}", self.head)?;
-        Ok(BufferedTail { tail: &self.tail })
-    }
-}
-
-pub struct DisplayEscapable<D, B> {
-    start: D,
-    end: B,
-}
-pub struct DisplayEscapableTail<'a, D> {
-    end: &'a D,
-}
-impl<A: fmt::Display, B: fmt::Display> DisplayEscapable<A, B> {
-    pub fn new(head: A, tail: B) -> Self {
-        DisplayEscapable {
-            start: head,
-            end: tail,
-        }
-    }
-}
-impl<'b, D: fmt::Display> RenderTail for DisplayEscapableTail<'b, D> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-        use std::fmt::Write;
-        write!(w.writer_escapable(), "{}", self.end)
-    }
-}
-impl<'a, A: fmt::Display, B: fmt::Display> Elem for &'a DisplayEscapable<A, B> {
-    type Tail = DisplayEscapableTail<'a, B>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        use std::fmt::Write;
-        write!(w.writer_escapable(), "{}", self.start)?;
-        Ok(DisplayEscapableTail { end: &self.end })
-    }
-}
-
-pub fn append<R: Elem, K: Elem>(a: R, k: K) -> Append<R, K> {
-    a.append(k)
 }
