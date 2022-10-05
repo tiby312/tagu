@@ -102,7 +102,6 @@ pub struct RawEscapable<D> {
 impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        //TODO write one global function
         write!(w.writer_escapable(), " {}", self.data)?;
         Ok(())
     }
