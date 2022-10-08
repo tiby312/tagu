@@ -101,6 +101,10 @@ impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
             start: self.start,
         }
     }
+    pub fn with_map<AA: Attr, F: FnOnce() -> AA>(self, attr: F) -> Single<D, AA, K, Z> {
+        let attr = attr();
+        self.with(attr)
+    }
     pub fn with_ending<ZZ: fmt::Display>(self, ending: ZZ) -> Single<D, A, K, ZZ> {
         Single {
             tag: self.tag,
@@ -179,6 +183,10 @@ impl<D: fmt::Display, A: Attr> Element<D, A> {
             tag: self.tag,
             attr,
         }
+    }
+    pub fn with_map<AA: Attr, F: FnOnce() -> AA>(self, attr: F) -> Element<D, AA> {
+        let attr = attr();
+        self.with(attr)
     }
 }
 impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
@@ -427,7 +435,7 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: Elem+Locked>(elem: E) -> Result<Self, fmt::Error> {
+    pub fn new<E: Elem + Locked>(elem: E) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
         let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
@@ -487,5 +495,3 @@ impl<'a> Elem for &'a BufferedElem {
 //         Ok(DisplayEscapableTail { end: &self.end })
 //     }
 // }
-
-

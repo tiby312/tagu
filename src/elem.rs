@@ -23,7 +23,7 @@ impl<'a> ElemWrite<'a> {
         ElemWrite(WriteWrap(w))
     }
 
-    pub fn render<E: Elem+Locked>(&mut self, elem: E) -> fmt::Result {
+    pub fn render<E: Elem + Locked>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
@@ -37,7 +37,7 @@ impl<'a> ElemWrite<'a> {
         SessionStart { elem, writer: self }
     }
 
-    pub fn render_map<E: Elem+Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
+    pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self)?;
         tail.render(self)
@@ -158,7 +158,7 @@ pub trait Elem {
 
 ///
 /// Indicates that the implementor does that allow arbitrary html escaping.
-/// 
+///
 pub trait Locked {}
 
 ///
