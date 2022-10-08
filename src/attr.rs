@@ -44,7 +44,7 @@ impl<'a> AttrWrite<'a> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
-    pub fn writer_escapable(&mut self) -> WriteWrap {
+    pub(crate) fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
     }
 }

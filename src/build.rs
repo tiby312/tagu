@@ -42,6 +42,8 @@ pub struct Closure<I> {
 pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closure<F> {
     Closure { func }
 }
+impl<I> SafeElem for Closure<I> {}
+
 
 impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
     type Tail = ();
@@ -56,6 +58,7 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
 pub struct Iter<I> {
     iter: I,
 }
+impl<I: IntoIterator<Item = R>, R: SafeElem> SafeElem for Iter<I>{}
 
 impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     type Tail = ();
@@ -89,7 +92,9 @@ pub struct Single<D, A, K, Z> {
     start: K,
     ending: Z,
 }
+impl<D, A, K, Z> SafeElem for Single<D, A, K, Z> {
 
+}
 impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
     pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA, K, Z> {
         Single {
@@ -162,12 +167,17 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
     }
 }
 
+
+
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Element<D, A> {
     tag: D,
     attr: A,
 }
+
+impl<D, A> SafeElem for Element<D, A> {}
+
 
 impl<D: fmt::Display, A: Attr> Element<D, A> {
     pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AA> {
