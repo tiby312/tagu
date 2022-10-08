@@ -25,7 +25,9 @@ pub fn render<E: Elem + SafeElem, W: fmt::Write>(elem: E, mut writer: W) -> fmt:
 /// Render an element to a write
 ///
 pub fn render_escapable<E: Elem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
-    ElemWrite(WriteWrap(&mut writer)).render(elem)
+    let e = &mut ElemWrite(WriteWrap(&mut writer));
+    let tail = elem.render_head(e)?;
+    tail.render(e)
 }
 
 ///

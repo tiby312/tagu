@@ -43,5 +43,5 @@ fn main() -> std::fmt::Result {
 
     let all = html.append(style).append(table);
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    hypermelon::render_escapable(all, hypermelon::stdout_fmt())
 }

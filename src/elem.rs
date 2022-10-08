@@ -19,26 +19,26 @@ impl<'a> ElemWrite<'a> {
         attr::AttrWrite(self.0.borrow_mut())
     }
 
-    pub fn new(w: &'a mut dyn fmt::Write) -> Self {
+    pub(crate) fn new(w: &'a mut dyn fmt::Write) -> Self {
         ElemWrite(WriteWrap(w))
     }
 
-    pub fn render<E: Elem>(&mut self, elem: E) -> fmt::Result {
+    pub fn render<E: SafeElem>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
 
-    pub fn render_with<'b, E: Elem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
+    pub fn render_with<'b, E: SafeElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
         SessionStart { elem, writer: self }
     }
 
-    pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
+    pub fn render_map<E: SafeElem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
 
-    pub fn render_map_with<'b, E: Elem, F: FnOnce() -> E>(
+    pub fn render_map_with<'b, E: SafeElem, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
     ) -> SessionStart<'b, 'a, E> {
@@ -165,7 +165,7 @@ pub struct Append<A, B> {
 
 impl<A: SafeElem, B: SafeElem> SafeElem for Append<A, B> {}
 
-impl<A: Elem, B: Elem> Elem for Append<A, B> {
+impl<A: SafeElem, B: SafeElem> Elem for Append<A, B> {
     type Tail = A::Tail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
@@ -186,7 +186,7 @@ pub struct Chain<A, B> {
 }
 impl<A: SafeElem, B: SafeElem> SafeElem for Chain<A, B> {}
 
-impl<A: Elem, B: Elem> Elem for Chain<A, B> {
+impl<A: SafeElem, B: SafeElem> Elem for Chain<A, B> {
     type Tail = B::Tail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
