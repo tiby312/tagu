@@ -28,6 +28,11 @@ impl<'a> ElemWrite<'a> {
         tail.render(self)
     }
 
+    pub(crate) fn render_inner<E: Elem>(&mut self, elem: E) -> fmt::Result {
+        let tail = elem.render_head(self)?;
+        tail.render(self)
+    }
+
     pub fn render_with<'b, E: SafeElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
         SessionStart { elem, writer: self }
     }
@@ -165,12 +170,12 @@ pub struct Append<A, B> {
 
 impl<A: SafeElem, B: SafeElem> SafeElem for Append<A, B> {}
 
-impl<A: SafeElem, B: SafeElem> Elem for Append<A, B> {
+impl<A: Elem, B: Elem> Elem for Append<A, B> {
     type Tail = A::Tail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
         let tail = top.render_head(w)?;
-        w.render(bottom)?;
+        w.render_inner(bottom)?;
         Ok(tail)
     }
 }
@@ -186,11 +191,11 @@ pub struct Chain<A, B> {
 }
 impl<A: SafeElem, B: SafeElem> SafeElem for Chain<A, B> {}
 
-impl<A: SafeElem, B: SafeElem> Elem for Chain<A, B> {
+impl<A: Elem, B: Elem> Elem for Chain<A, B> {
     type Tail = B::Tail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
-        w.render(top)?;
+        w.render_inner(top)?;
         bottom.render_head(w)
     }
 }

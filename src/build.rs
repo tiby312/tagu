@@ -59,11 +59,11 @@ pub struct Iter<I> {
 }
 impl<I: IntoIterator<Item = R>, R: SafeElem> SafeElem for Iter<I> {}
 
-impl<I: IntoIterator<Item = R>, R: SafeElem> Elem for Iter<I> {
+impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         for i in self.iter {
-            w.render(i)?;
+            w.render_inner(i)?;
         }
         Ok(())
     }
@@ -427,7 +427,7 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: Elem>(elem: E) -> Result<Self, fmt::Error> {
+    pub fn new<E: SafeElem>(elem: E) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
         let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
@@ -450,6 +450,8 @@ impl<'a> RenderTail for BufferedTail<'a> {
         write!(w.writer_escapable(), "{}", self.tail)
     }
 }
+impl<'a> SafeElem for &'a BufferedElem {}
+
 impl<'a> Elem for &'a BufferedElem {
     type Tail = BufferedTail<'a>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
