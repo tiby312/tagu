@@ -24,16 +24,16 @@ impl<'a> ElemWriteEscapable<'a> {
         tail.render(&mut self.as_elem_write())
     }
 
-    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionStartEscapable<'b, 'a, E> {
-        SessionStartEscapable { elem, writer: self }
+    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionEscapable<'b, 'a, E> {
+        SessionEscapable { elem, writer: self }
     }
 
     pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
-    ) -> SessionStartEscapable<'b, 'a, E> {
+    ) -> SessionEscapable<'b, 'a, E> {
         let elem = func();
-        SessionStartEscapable { elem, writer: self }
+        SessionEscapable { elem, writer: self }
     }
 }
 
@@ -79,16 +79,16 @@ impl<'a> ElemWrite<'a> {
         tail.render(self)
     }
 
-    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
-        SessionStart { elem, writer: self }
+    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> Session<'b, 'a, E> {
+        Session { elem, writer: self }
     }
 
     pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
-    ) -> SessionStart<'b, 'a, E> {
+    ) -> Session<'b, 'a, E> {
         let elem = func();
-        SessionStart { elem, writer: self }
+        Session { elem, writer: self }
     }
 }
 
@@ -254,14 +254,14 @@ pub trait RenderTail {
 /// Used to start a closure session
 ///
 #[must_use]
-pub struct SessionStart<'a, 'b, E> {
+pub struct Session<'a, 'b, E> {
     elem: E,
     writer: &'a mut ElemWrite<'b>,
 }
 
-impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
+impl<'a, 'b, E: Elem> Session<'a, 'b, E> {
     pub fn build(self, func: impl FnOnce(&mut ElemWrite) -> fmt::Result) -> fmt::Result {
-        let SessionStart { elem, writer } = self;
+        let Session { elem, writer } = self;
         let tail = elem.render_head(writer)?;
         func(writer)?;
         tail.render(writer)
@@ -272,14 +272,14 @@ impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
 /// Used to start a closure session
 ///
 #[must_use]
-pub struct SessionStartEscapable<'a, 'b, E> {
+pub struct SessionEscapable<'a, 'b, E> {
     elem: E,
     writer: &'a mut ElemWriteEscapable<'b>,
 }
 
-impl<'a, 'b, E: Elem> SessionStartEscapable<'a, 'b, E> {
+impl<'a, 'b, E: Elem> SessionEscapable<'a, 'b, E> {
     pub fn build(self, func: impl FnOnce(&mut ElemWriteEscapable) -> fmt::Result) -> fmt::Result {
-        let SessionStartEscapable { elem, writer } = self;
+        let SessionEscapable { elem, writer } = self;
         let tail = elem.render_head(&mut writer.as_elem_write())?;
         func(writer)?;
         tail.render(&mut writer.as_elem_write())
