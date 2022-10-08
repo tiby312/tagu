@@ -68,7 +68,10 @@ the build blocks around. You can mix and match because you can make elements fro
 
 ### Is there escape XML protection?
 
-Attributes are fed through a escape protectors. Tag names are fed through escape protectors. User can bypass this by using `build::raw_escapable()` and `AttrWrite::writer_escapable()`. The element chaining system works by having each element implement a render_head(), and a render_tail() function. This means a user can easily only call render_head() and deliberately not call render_tail().
+Attributes are fed through a escape protectors. Tag names are fed through escape protectors. 
+User can bypass this using the raw_escpapable() function. This returns the only element type that doesnt implement SafeElem.
+render() requires that the chained together element implements safe elem. If the user chains in a raw element, the whole
+chain will not implement SafeElem. Instead the user would have to use render_escapable(); The element chaining system works by having each element implement a render_head(), and a render_tail() function. This means a user can easily only call render_head() and deliberately not call render_tail().
 
 
 ### What happened to the tagger crate?

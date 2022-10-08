@@ -17,7 +17,7 @@ pub mod prelude {
 ///
 /// Render an element to a write
 ///
-pub fn render<E: Elem+SafeElem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
+pub fn render<E: Elem + SafeElem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 

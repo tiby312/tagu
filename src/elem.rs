@@ -55,10 +55,6 @@ pub trait RenderElem {
     fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
 }
 
-
-impl<E:Elem> SafeElem for DynamicElem<E>{
-
-}
 ///
 /// A element that can be hidden behind a dyn trait.
 ///
@@ -100,6 +96,8 @@ impl<'a> RenderTail for DynElemTail<'a> {
         self.elem.render_tail(w)
     }
 }
+
+impl<'a> SafeElem for DynElem<'a> {}
 pub struct DynElem<'a> {
     elem: &'a mut dyn RenderElem,
 }
@@ -153,10 +151,7 @@ pub trait Elem {
     }
 }
 
-
-pub trait SafeElem{
-
-}
+pub trait SafeElem: Elem {}
 
 ///
 /// Append an element to another adaptor
@@ -168,7 +163,7 @@ pub struct Append<A, B> {
     bottom: B,
 }
 
-impl<A:SafeElem,B:SafeElem> SafeElem for Append<A,B>{}
+impl<A: SafeElem, B: SafeElem> SafeElem for Append<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Append<A, B> {
     type Tail = A::Tail;
@@ -189,8 +184,7 @@ pub struct Chain<A, B> {
     top: A,
     bottom: B,
 }
-impl<A:SafeElem,B:SafeElem> SafeElem for Chain<A,B>{}
-
+impl<A: SafeElem, B: SafeElem> SafeElem for Chain<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Chain<A, B> {
     type Tail = B::Tail;
@@ -234,7 +228,7 @@ impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
 
 use fmt::Write;
 
-impl<D: fmt::Display> SafeElem for D{}
+impl<D: fmt::Display> SafeElem for D {}
 impl<D: fmt::Display> Elem for D {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
