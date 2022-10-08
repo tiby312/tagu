@@ -36,3 +36,10 @@ pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) ->
 pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Points<I> {
     Points::new(iter)
 }
+
+pub mod sink {
+    use super::attr::sink::*;
+    pub fn path_ext<F: FnOnce(PathSink) -> std::fmt::Result>(func: F) -> PathFlexible<F> {
+        PathFlexible::new(func)
+    }
+}

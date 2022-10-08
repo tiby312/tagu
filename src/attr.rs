@@ -129,6 +129,11 @@ pub mod sink {
     pub struct PathFlexible<F> {
         func: F,
     }
+    impl<F: FnOnce(PathSink) -> fmt::Result> PathFlexible<F> {
+        pub fn new(func: F) -> Self {
+            PathFlexible { func }
+        }
+    }
     impl<F: FnOnce(PathSink) -> fmt::Result> Attr for PathFlexible<F> {
         fn render(self, w: &mut AttrWrite) -> fmt::Result {
             w.writer_escapable().write_str(" d=\"")?;
@@ -137,13 +142,10 @@ pub mod sink {
         }
     }
 
-    pub fn path_ext<F: FnOnce(PathSink) -> fmt::Result>(func: F) -> PathFlexible<F> {
-        sink::PathFlexible { func }
-    }
     #[test]
     fn test() {
         use PathCommand::*;
-        path_ext(|s| {
+        PathFlexible::new(|s| {
             let mut s = s.start();
             s.put(M(0, 0))?;
             s.put(L(0, 0))?;
