@@ -6,12 +6,10 @@ fn main() -> std::fmt::Result {
     let height = 100.0;
 
     let j = build::from_closure(|w| {
-        w.render_map_with(|| {
-            build::elem("svg").with(attrs!(
-                ("xmlns", "http://www.w3.org/2000/svg"),
-                ("viewBox", format_move!("0 0 {} {}", width, height))
-            ))
-        })
+        w.session(build::elem("svg").with(attrs!(
+            ("xmlns", "http://www.w3.org/2000/svg"),
+            ("viewBox", format_move!("0 0 {} {}", width, height))
+        )))
         .build(|w| {
             w.render_map(|| {
                 build::elem("style").append(".test{fill:none;stroke:white;stroke-width:3}")

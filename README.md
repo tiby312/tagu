@@ -69,7 +69,7 @@ the build blocks around. You can mix and match because you can make elements fro
 ### Is there escape XML protection?
 
 Attributes are fed through a escape protectors. Tag names are fed through escape protectors. 
-User can bypass this using the `raw_escpapable()` function. This returns the only element type that doesnt implement `elem::Locked`.
+User can bypass this using the `raw_escpapable()` or `from_closure_escapable()` functions. This returns the only element type that doesnt implement `elem::Locked`.
 `render()` requires that the chained together element implements `Locked`. If the user chains in a raw element, the whole
 chain will not implement `Locked`. Instead the user would have to use `render_escapable()`. The element chaining system works by having each element implement a `render_head()`, and a `render_tail()` function.
 

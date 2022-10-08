@@ -36,6 +36,25 @@ pub fn from_iter<I: Iterator<Item = R>, R: Elem>(iter: I) -> Iter<I> {
 
 #[derive(Copy, Clone)]
 #[must_use]
+pub struct ClosureEscapable<I> {
+    func: I,
+}
+pub fn from_closure_escapable<F: FnOnce(&mut ElemWriteEscapable) -> fmt::Result>(
+    func: F,
+) -> ClosureEscapable<F> {
+    ClosureEscapable { func }
+}
+
+impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> Elem for ClosureEscapable<I> {
+    type Tail = ();
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        (self.func)(&mut w.as_escapable())?;
+        Ok(())
+    }
+}
+
+#[derive(Copy, Clone)]
+#[must_use]
 pub struct Closure<I> {
     func: I,
 }
@@ -495,3 +514,9 @@ impl<'a> Elem for &'a BufferedElem {
 //         Ok(DisplayEscapableTail { end: &self.end })
 //     }
 // }
+
+impl RenderTail for () {
+    fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
+        Ok(())
+    }
+}

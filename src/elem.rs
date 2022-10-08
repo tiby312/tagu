@@ -1,5 +1,42 @@
 use super::*;
 
+pub struct ElemWriteEscapable<'a>(pub(crate) WriteWrap<'a>);
+
+impl<'a> ElemWriteEscapable<'a> {
+    pub fn writer_escapable(&mut self) -> WriteWrap {
+        self.0.borrow_mut()
+    }
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+        tools::escape_guard(self.0.borrow_mut())
+    }
+
+    pub fn render<E: Elem>(&mut self, elem: E) -> fmt::Result {
+        let tail = elem.render_head(&mut self.as_elem_write())?;
+        tail.render(&mut self.as_elem_write())
+    }
+    fn as_elem_write(&mut self) -> ElemWrite {
+        ElemWrite(WriteWrap(self.0 .0))
+    }
+
+    pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
+        let elem = func();
+        let tail = elem.render_head(&mut self.as_elem_write())?;
+        tail.render(&mut self.as_elem_write())
+    }
+
+    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionStartEscapable<'b, 'a, E> {
+        SessionStartEscapable { elem, writer: self }
+    }
+
+    pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
+        &'b mut self,
+        func: F,
+    ) -> SessionStartEscapable<'b, 'a, E> {
+        let elem = func();
+        SessionStartEscapable { elem, writer: self }
+    }
+}
+
 ///
 /// Render elements
 ///
@@ -7,6 +44,9 @@ use super::*;
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>);
 
 impl<'a> ElemWrite<'a> {
+    pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable {
+        ElemWriteEscapable(WriteWrap(self.0 .0))
+    }
     pub(crate) fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
     }
@@ -33,17 +73,17 @@ impl<'a> ElemWrite<'a> {
         tail.render(self)
     }
 
-    pub fn render_with<'b, E: Locked>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
-        SessionStart { elem, writer: self }
-    }
-
     pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
 
-    pub fn render_map_with<'b, E: Locked, F: FnOnce() -> E>(
+    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
+        SessionStart { elem, writer: self }
+    }
+
+    pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
     ) -> SessionStart<'b, 'a, E> {
@@ -210,12 +250,6 @@ pub trait RenderTail {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
 }
 
-impl RenderTail for () {
-    fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
 ///
 /// Used to start a closure session
 ///
@@ -234,12 +268,29 @@ impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
     }
 }
 
-use fmt::Write;
+///
+/// Used to start a closure session
+///
+#[must_use]
+pub struct SessionStartEscapable<'a, 'b, E> {
+    elem: E,
+    writer: &'a mut ElemWriteEscapable<'b>,
+}
+
+impl<'a, 'b, E: Elem> SessionStartEscapable<'a, 'b, E> {
+    pub fn build(self, func: impl FnOnce(&mut ElemWriteEscapable) -> fmt::Result) -> fmt::Result {
+        let SessionStartEscapable { elem, writer } = self;
+        let tail = elem.render_head(&mut writer.as_elem_write())?;
+        func(writer)?;
+        tail.render(&mut writer.as_elem_write())
+    }
+}
 
 impl<D: fmt::Display> Locked for D {}
 impl<D: fmt::Display> Elem for D {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        use fmt::Write;
         write!(w.writer(), " {}", self)?;
         Ok(())
     }
