@@ -1,7 +1,7 @@
-pub mod build;
 pub mod tools;
 use std::fmt;
 pub mod attr;
+pub mod build;
 pub mod elem;
 use attr::*;
 

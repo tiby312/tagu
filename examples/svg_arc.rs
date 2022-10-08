@@ -1,7 +1,7 @@
 use hypermelon::build;
 use hypermelon::prelude::*;
 
-use hypermelon::build::PathCommand::*;
+use hypermelon::attr::PathCommand::*;
 fn main() -> std::fmt::Result {
     let width = 500.0;
     let height = 400.0;
