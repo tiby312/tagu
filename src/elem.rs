@@ -1,3 +1,7 @@
+//!
+//! Elem trait and building blocks
+//!
+
 use super::*;
 
 pub struct ElemWriteEscapable<'a>(WriteWrap<'a>);

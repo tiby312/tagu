@@ -7,26 +7,24 @@ use attr::*;
 
 use elem::*;
 use tools::WriteWrap;
+
 pub mod prelude {
+    //! The hypermelon prelude
     pub use super::attrs;
     pub use super::elem::Elem;
     pub use super::elems;
     pub use super::format_move;
 }
 
-// pub fn builder<W: fmt::Write>(writer: &mut W) -> ElemWrite {
-//     ElemWrite(WriteWrap(writer))
-// }
-
 ///
-/// Render an element to a write
+/// Render elements to a writer
 ///
 pub fn render<E: Elem + Locked, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 
 ///
-/// Render an element to a write
+/// Render elements to a writer that allows for escaping elements.
 ///
 pub fn render_escapable<E: Elem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     let e = &mut ElemWrite(WriteWrap(&mut writer));
@@ -42,7 +40,7 @@ pub fn stdout_fmt() -> tools::Adaptor<std::io::Stdout> {
 }
 
 ///
-/// call Elem::append() without having to have Elem in scope.
+/// call `Elem::append()` without having to have Elem in scope.
 ///
 pub fn append<R: Elem, K: Elem>(a: R, k: K) -> Append<R, K> {
     a.append(k)

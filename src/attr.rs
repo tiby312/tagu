@@ -1,3 +1,7 @@
+//!
+//! Attribute trait and building blocks
+//!
+
 use super::*;
 use fmt::Write;
 pub trait Attr {

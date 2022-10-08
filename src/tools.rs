@@ -1,3 +1,9 @@
+//!
+//! Misc functions
+//!
+
+use std::fmt;
+
 ///
 /// Writer adaptor that disallows escaping from xml.
 ///
@@ -43,7 +49,7 @@ impl<T: std::fmt::Write> std::fmt::Write for EscapeGuard<T> {
 }
 
 ///
-/// Used to wrap a `std::io::Write` to have `std::io::Write`.
+/// Used to wrap a `std::io::Write` to have `std::fmt::Write`.
 /// The underlying error can be extracted through the error field.
 ///
 pub struct Adaptor<T> {
@@ -51,7 +57,9 @@ pub struct Adaptor<T> {
     pub error: Result<(), std::io::Error>,
 }
 
-///Update a `std::io::Write` to be a `std::fmt::Write`
+///
+/// Update a `std::io::Write` to be a `std::fmt::Write`
+///
 pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
@@ -71,9 +79,10 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
     }
 }
 
-use std::fmt;
-/// Shorthand for `disp_const(move |w|write!(w,...))`
+///
 /// Similar to `std::format_args!()` except has a more flexible lifetime.
+/// Shorthand for `disp_const(move |w|write!(w,...))`
+///
 #[macro_export]
 macro_rules! format_move {
     ($($arg:tt)*) => {
@@ -106,6 +115,9 @@ impl<F: Fn(&mut fmt::Formatter) -> fmt::Result> fmt::Display for DisplayableClos
     }
 }
 
+///
+/// Wrapper around a &mut dyn std::fmt::Write
+///
 pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
 
 impl<'a> WriteWrap<'a> {
