@@ -436,6 +436,10 @@ impl BufferedElem {
         tail.shrink_to_fit();
         Ok(BufferedElem { head, tail })
     }
+
+    pub fn into_parts(self) -> (String, String) {
+        (self.head, self.tail)
+    }
 }
 
 pub struct BufferedTail<'a> {
