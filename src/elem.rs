@@ -18,17 +18,17 @@ impl<'a> ElemWriteEscapable<'a> {
         ElemWrite(WriteWrap(self.0 .0))
     }
 
-    pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
+    pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(&mut self.as_elem_write())?;
         tail.render(&mut self.as_elem_write())
     }
 
-    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> SessionEscapable<'b, 'a, E> {
+    pub fn session<'b, E:Elem>(&'b mut self, elem: E) -> SessionEscapable<'b, 'a, E> {
         SessionEscapable { elem, writer: self }
     }
 
-    pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
+    pub fn session_map<'b, E: Elem, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
     ) -> SessionEscapable<'b, 'a, E> {
@@ -79,11 +79,11 @@ impl<'a> ElemWrite<'a> {
         tail.render(self)
     }
 
-    pub fn session<'b, E: Locked>(&'b mut self, elem: E) -> Session<'b, 'a, E> {
+    pub fn session<'b, E: Elem+Locked>(&'b mut self, elem: E) -> Session<'b, 'a, E> {
         Session { elem, writer: self }
     }
 
-    pub fn session_map<'b, E: Locked, F: FnOnce() -> E>(
+    pub fn session_map<'b, E: Elem+Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
     ) -> Session<'b, 'a, E> {
