@@ -42,7 +42,7 @@ pub struct Closure<I> {
 pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closure<F> {
     Closure { func }
 }
-impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> SafeElem for Closure<I> {}
+impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Locked for Closure<I> {}
 
 impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
     type Tail = ();
@@ -57,7 +57,7 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
 pub struct Iter<I> {
     iter: I,
 }
-impl<I: IntoIterator<Item = R>, R: SafeElem> SafeElem for Iter<I> {}
+impl<I: IntoIterator<Item = R>, R: Locked> Locked for Iter<I> {}
 
 impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     type Tail = ();
@@ -91,7 +91,7 @@ pub struct Single<D, A, K, Z> {
     start: K,
     ending: Z,
 }
-impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> SafeElem for Single<D, A, K, Z> {}
+impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Locked for Single<D, A, K, Z> {}
 impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
     pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA, K, Z> {
         Single {
@@ -171,7 +171,7 @@ pub struct Element<D, A> {
     attr: A,
 }
 
-impl<D: fmt::Display, A: Attr> SafeElem for Element<D, A> {}
+impl<D: fmt::Display, A: Attr> Locked for Element<D, A> {}
 
 impl<D: fmt::Display, A: Attr> Element<D, A> {
     pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AA> {
@@ -427,7 +427,7 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: SafeElem>(elem: E) -> Result<Self, fmt::Error> {
+    pub fn new<E: Elem+Locked>(elem: E) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
         let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
@@ -450,7 +450,7 @@ impl<'a> RenderTail for BufferedTail<'a> {
         write!(w.writer_escapable(), "{}", self.tail)
     }
 }
-impl<'a> SafeElem for &'a BufferedElem {}
+impl<'a> Locked for &'a BufferedElem {}
 
 impl<'a> Elem for &'a BufferedElem {
     type Tail = BufferedTail<'a>;
@@ -487,3 +487,5 @@ impl<'a> Elem for &'a BufferedElem {
 //         Ok(DisplayEscapableTail { end: &self.end })
 //     }
 // }
+
+

@@ -23,7 +23,7 @@ impl<'a> ElemWrite<'a> {
         ElemWrite(WriteWrap(w))
     }
 
-    pub fn render<E: SafeElem>(&mut self, elem: E) -> fmt::Result {
+    pub fn render<E: Elem+Locked>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
@@ -33,17 +33,17 @@ impl<'a> ElemWrite<'a> {
         tail.render(self)
     }
 
-    pub fn render_with<'b, E: SafeElem>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
+    pub fn render_with<'b, E: Locked>(&'b mut self, elem: E) -> SessionStart<'b, 'a, E> {
         SessionStart { elem, writer: self }
     }
 
-    pub fn render_map<E: SafeElem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
+    pub fn render_map<E: Elem+Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self)?;
         tail.render(self)
     }
 
-    pub fn render_map_with<'b, E: SafeElem, F: FnOnce() -> E>(
+    pub fn render_map_with<'b, E: Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
     ) -> SessionStart<'b, 'a, E> {
@@ -102,7 +102,7 @@ impl<'a> RenderTail for DynElemTail<'a> {
     }
 }
 
-impl<'a> SafeElem for DynElem<'a> {}
+impl<'a> Locked for DynElem<'a> {}
 pub struct DynElem<'a> {
     elem: &'a mut dyn RenderElem,
 }
@@ -156,7 +156,10 @@ pub trait Elem {
     }
 }
 
-pub trait SafeElem: Elem {}
+///
+/// Indicates that the implementor does that allow arbitrary html escaping.
+/// 
+pub trait Locked {}
 
 ///
 /// Append an element to another adaptor
@@ -168,7 +171,7 @@ pub struct Append<A, B> {
     bottom: B,
 }
 
-impl<A: SafeElem, B: SafeElem> SafeElem for Append<A, B> {}
+impl<A: Locked, B: Locked> Locked for Append<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Append<A, B> {
     type Tail = A::Tail;
@@ -189,7 +192,7 @@ pub struct Chain<A, B> {
     top: A,
     bottom: B,
 }
-impl<A: SafeElem, B: SafeElem> SafeElem for Chain<A, B> {}
+impl<A: Locked, B: Locked> Locked for Chain<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Chain<A, B> {
     type Tail = B::Tail;
@@ -233,7 +236,7 @@ impl<'a, 'b, E: Elem> SessionStart<'a, 'b, E> {
 
 use fmt::Write;
 
-impl<D: fmt::Display> SafeElem for D {}
+impl<D: fmt::Display> Locked for D {}
 impl<D: fmt::Display> Elem for D {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {

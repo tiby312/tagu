@@ -14,10 +14,16 @@ pub mod prelude {
     pub use super::format_move;
 }
 
+
+
+pub fn builder<W:fmt::Write>(writer:&mut W)->ElemWrite{
+    ElemWrite(WriteWrap(writer))
+}
+
 ///
 /// Render an element to a write
 ///
-pub fn render<E: Elem + SafeElem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
+pub fn render<E: Elem+Locked, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
     ElemWrite(WriteWrap(&mut writer)).render(elem)
 }
 
