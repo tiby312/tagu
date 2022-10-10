@@ -4,6 +4,10 @@
 
 use super::*;
 use fmt::Write;
+
+///
+/// The attribute building block trait
+///
 pub trait Attr {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result;
     fn chain<R: Attr>(self, other: R) -> AttrChain<Self, R>
@@ -23,6 +27,9 @@ impl Attr for () {
     }
 }
 
+///
+/// Chain together two attrs
+///
 #[must_use]
 #[derive(Copy, Clone)]
 pub struct AttrChain<A, B> {
@@ -38,6 +45,9 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
     }
 }
 
+///
+/// The attr writer passed to the closure attr
+///
 pub struct AttrWrite<'a>(WriteWrap<'a>);
 impl<'a> AttrWrite<'a> {
     pub(super) fn new(wrap: WriteWrap<'a>) -> Self {
@@ -65,6 +75,9 @@ impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
     }
 }
 
+///
+/// A closure attr
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct AttrClosure<I> {
@@ -84,6 +97,9 @@ where
     }
 }
 
+///
+/// A path attribute
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Path<I> {
@@ -106,59 +122,71 @@ impl<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display> Path<I> {
     }
 }
 
-pub mod sink {
-    use super::*;
-    pub struct PathSink<'a, 'b> {
-        writer: &'a mut AttrWrite<'b>,
-    }
+///
+/// path closure building blocks
+///
+pub struct PathSinkBuilder<'a, 'b> {
+    writer: &'a mut AttrWrite<'b>,
+}
 
-    pub struct PathSink2<'a, 'b, T> {
-        writer: &'a mut AttrWrite<'b>,
-        _p: std::marker::PhantomData<T>,
+///
+/// path closure building blocks
+///
+pub struct PathSink<'a, 'b, T> {
+    writer: &'a mut AttrWrite<'b>,
+    _p: std::marker::PhantomData<T>,
+}
+impl<T: fmt::Display> PathSink<'_, '_, T> {
+    pub fn put(&mut self, command: PathCommand<T>) -> fmt::Result {
+        command.write(self.writer.writer())
     }
-    impl<T: fmt::Display> PathSink2<'_, '_, T> {
-        pub fn put(&mut self, command: PathCommand<T>) -> fmt::Result {
-            command.write(self.writer.writer())
+}
+impl<'a, 'b> PathSinkBuilder<'a, 'b> {
+    pub fn start<T>(self) -> PathSink<'a, 'b, T> {
+        PathSink {
+            writer: self.writer,
+            _p: std::marker::PhantomData,
         }
-    }
-    impl<'a, 'b> PathSink<'a, 'b> {
-        pub fn start<T>(self) -> PathSink2<'a, 'b, T> {
-            PathSink2 {
-                writer: self.writer,
-                _p: std::marker::PhantomData,
-            }
-        }
-    }
-
-    pub struct PathFlexible<F> {
-        func: F,
-    }
-    impl<F: FnOnce(PathSink) -> fmt::Result> PathFlexible<F> {
-        pub fn new(func: F) -> Self {
-            PathFlexible { func }
-        }
-    }
-    impl<F: FnOnce(PathSink) -> fmt::Result> Attr for PathFlexible<F> {
-        fn render(self, w: &mut AttrWrite) -> fmt::Result {
-            w.writer_escapable().write_str(" d=\"")?;
-            (self.func)(PathSink { writer: w })?;
-            w.writer_escapable().write_str("\"")
-        }
-    }
-
-    #[test]
-    fn test() {
-        use PathCommand::*;
-        PathFlexible::new(|s| {
-            let mut s = s.start();
-            s.put(M(0, 0))?;
-            s.put(L(0, 0))?;
-            s.put(Z())?;
-            Ok(())
-        });
     }
 }
 
+/// Path closure
+///
+/// If you can, I recommend create a path using an iterator via the Path struct.
+/// However, in some cases, this can be too constraining. So instead this provides
+/// a more flexible api that uses a closure
+///
+/// ```
+/// use hypermelon::attr::sink::PathClosure;
+/// use hypermelon::attr::PathCommand::*;
+/// PathClosure::new(|s| {
+///    let mut s = s.start();
+///    s.put(M(0, 0))?;
+///    s.put(L(0, 0))?;
+///    s.put(Z())?;
+///    Ok(())
+/// });
+///
+///
+pub struct PathClosure<F> {
+    func: F,
+}
+impl<F: FnOnce(PathSinkBuilder) -> fmt::Result> PathClosure<F> {
+    pub fn new(func: F) -> Self {
+        PathClosure { func }
+    }
+}
+impl<F: FnOnce(PathSinkBuilder) -> fmt::Result> Attr for PathClosure<F> {
+    fn render(self, w: &mut AttrWrite) -> fmt::Result {
+        w.writer_escapable().write_str(" d=\"")?;
+        (self.func)(PathSinkBuilder { writer: w })?;
+        w.writer_escapable().write_str("\"")
+    }
+}
+
+///
+/// A points attribute
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Points<I> {

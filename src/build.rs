@@ -99,6 +99,20 @@ pub fn elem<D: fmt::Display>(tag: D) -> Element<D, ()> {
 }
 
 ///
+/// Box an element
+///
+/// ```
+/// let mut s = String::new();
+/// let k = hypermelon::build::single("hello");
+/// let k = hypermelon::build::box_elem(k);
+/// hypermelon::render(k,&mut s).unwrap()
+///
+/// ```
+pub fn box_elem<'a, E: Elem + 'a>(elem: E) -> DynamicElement<'a> {
+    DynamicElement::new(elem)
+}
+
+///
 /// Create an attr from a closure.
 ///
 /// ```
@@ -153,7 +167,6 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
     Points::new(iter)
 }
 
-use super::attr::sink::*;
 ///
 /// Create a path attribute from a closure
 ///
@@ -162,7 +175,7 @@ use super::attr::sink::*;
 /// use hypermelon::attr::PathCommand;
 /// let mut s = String::new();
 /// let k = build::elem("hello").with(
-///     build::path_ext(|w|{
+///     build::path_from_closure(|w|{
 ///         let mut w=w.start();
 ///         w.put(PathCommand::L(5.0,5.0))?;
 ///         w.put(PathCommand::L(5.0,5.0))
@@ -172,6 +185,8 @@ use super::attr::sink::*;
 ///
 /// ```
 ///
-pub fn path_ext<F: FnOnce(PathSink) -> std::fmt::Result>(func: F) -> PathFlexible<F> {
-    PathFlexible::new(func)
+pub fn path_from_closure<F: FnOnce(PathSinkBuilder) -> std::fmt::Result>(
+    func: F,
+) -> PathClosure<F> {
+    PathClosure::new(func)
 }

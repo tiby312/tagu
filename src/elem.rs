@@ -4,6 +4,9 @@
 
 use super::*;
 
+///
+/// Writer struct passed to escapable closure elem
+///
 pub struct ElemWriteEscapable<'a>(WriteWrap<'a>);
 
 impl<'a> ElemWriteEscapable<'a> {
@@ -42,7 +45,7 @@ impl<'a> ElemWriteEscapable<'a> {
 }
 
 ///
-/// Render elements
+/// Writer struct passed to closure elem
 ///
 #[must_use]
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>);
@@ -96,63 +99,71 @@ impl<'a> ElemWrite<'a> {
 ///
 /// Alternative trait for Elem that is friendly to dyn trait.
 ///
-pub trait RenderElem {
+pub trait ElemDyn {
     fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
     fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
 }
 
 ///
-/// A element that can be hidden behind a dyn trait.
-///
-pub struct DynamicElem<E: Elem> {
-    head: Option<E>,
-    tail: Option<E::Tail>,
-}
-
-impl<E: Elem> DynamicElem<E> {
-    pub fn new(elem: E) -> DynamicElem<E> {
-        DynamicElem {
-            head: Some(elem),
-            tail: None,
-        }
-    }
-    pub fn as_dyn(&mut self) -> DynElem {
-        DynElem { elem: self }
-    }
-}
-impl<E: Elem> RenderElem for DynamicElem<E> {
-    fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
-        let tail = self.head.take().unwrap().render_head(w)?;
-        self.tail = Some(tail);
-        Ok(())
-    }
-    fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
-        self.tail.take().unwrap().render(w)
-    }
-}
-
-///
 /// Tail to DynElem
 ///
-pub struct DynElemTail<'a> {
-    elem: &'a mut dyn RenderElem,
+pub struct DynamicElementTail<'a> {
+    elem: Box<dyn ElemDyn + 'a>,
 }
-impl<'a> RenderTail for DynElemTail<'a> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+impl<'a> ElemTail for DynamicElementTail<'a> {
+    fn render(mut self, w: &mut ElemWrite) -> std::fmt::Result {
         self.elem.render_tail(w)
     }
 }
 
-impl<'a> Locked for DynElem<'a> {}
-pub struct DynElem<'a> {
-    elem: &'a mut dyn RenderElem,
+impl Locked for DynamicElement<'_> {}
+
+///
+/// A dynamic elem that implement Elem
+///
+pub struct DynamicElement<'a> {
+    elem: Box<dyn ElemDyn + 'a>,
+}
+impl<'a> DynamicElement<'a> {
+    pub fn new<E: Elem + 'a>(elem: E) -> Self {
+        ///
+        /// A dynamic elem, that
+        ///
+        pub struct DynamicElem<E: Elem> {
+            head: Option<E>,
+            tail: Option<E::Tail>,
+        }
+
+        impl<E: Elem> DynamicElem<E> {
+            pub fn new(elem: E) -> DynamicElem<E> {
+                DynamicElem {
+                    head: Some(elem),
+                    tail: None,
+                }
+            }
+        }
+        impl<E: Elem> ElemDyn for DynamicElem<E> {
+            fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
+                let tail = self.head.take().unwrap().render_head(w)?;
+                self.tail = Some(tail);
+                Ok(())
+            }
+            fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
+                self.tail.take().unwrap().render(w)
+            }
+        }
+
+        DynamicElement {
+            elem: Box::new(DynamicElem::new(elem)),
+        }
+    }
 }
 
-impl<'a> Elem for DynElem<'a> {
-    type Tail = DynElemTail<'a>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+impl<'a> Elem for DynamicElement<'a> {
+    type Tail = DynamicElementTail<'a>;
+    fn render_head(mut self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         self.elem.render_head(w)?;
-        Ok(DynElemTail { elem: self.elem })
+        Ok(DynamicElementTail { elem: self.elem })
     }
 }
 
@@ -160,7 +171,7 @@ impl<'a> Elem for DynElem<'a> {
 /// Main building block.
 ///
 pub trait Elem {
-    type Tail: RenderTail;
+    type Tail: ElemTail;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
     fn render_closure<K>(
@@ -247,7 +258,7 @@ impl<A: Elem, B: Elem> Elem for Chain<A, B> {
 ///
 /// Tail to elem trait.
 ///
-pub trait RenderTail {
+pub trait ElemTail {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
 }
 
@@ -270,7 +281,7 @@ impl<'a, 'b, E: Elem> Session<'a, 'b, E> {
 }
 
 ///
-/// Used to start a closure session
+/// Used to start an escapable closure session
 ///
 #[must_use]
 pub struct SessionEscapable<'a, 'b, E> {
@@ -304,6 +315,9 @@ impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> Elem for ClosureEscapabl
     }
 }
 
+///
+/// An escapable closure elem
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct ClosureEscapable<I> {
@@ -316,6 +330,9 @@ impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> ClosureEscapable<I> {
     }
 }
 
+///
+/// A closure elem
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Closure<I> {
@@ -338,6 +355,9 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
     }
 }
 
+///
+/// An iterator of elems
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Iter<I> {
@@ -360,6 +380,9 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
+///
+/// A raw escapable element
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct RawEscapable<D> {
@@ -380,6 +403,9 @@ impl<D: fmt::Display> Elem for RawEscapable<D> {
 
 use fmt::Write;
 
+///
+/// A element with no ending tag
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Single<D, A, K, Z> {
@@ -449,13 +475,16 @@ impl<D: fmt::Display> Single<D, (), &'static str, &'static str> {
     }
 }
 
+///
+/// The tail of an element
+///
 #[derive(Copy, Clone)]
 #[must_use]
-pub struct ElemTail<D> {
+pub struct ElementTail<D> {
     tag: D,
 }
 
-impl<D: fmt::Display> RenderTail for ElemTail<D> {
+impl<D: fmt::Display> ElemTail for ElementTail<D> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
         w.writer_escapable().write_str("</")?;
         write!(w.writer(), "{}", &self.tag)?;
@@ -463,6 +492,9 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
     }
 }
 
+///
+/// A regular element with an ending tag
+///
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Element<D, A> {
@@ -485,7 +517,7 @@ impl<D: fmt::Display, A: Attr> Element<D, A> {
     }
 }
 impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
-    type Tail = ElemTail<D>;
+    type Tail = ElementTail<D>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Element { tag, attr } = self;
 
@@ -495,7 +527,7 @@ impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
         attr.render(&mut w.as_attr_write())?;
         w.writer_escapable().write_str(" >")?;
 
-        Ok(ElemTail { tag })
+        Ok(ElementTail { tag })
     }
 }
 impl<D: fmt::Display> Element<D, ()> {
@@ -504,6 +536,8 @@ impl<D: fmt::Display> Element<D, ()> {
     }
 }
 
+///
+/// A string buffered element
 ///
 /// If you need to render something over, and over again,
 /// you can instead buffer it to a string using this struct
@@ -532,10 +566,13 @@ impl BufferedElem {
     }
 }
 
+///
+/// A buffered element's tail
+///
 pub struct BufferedTail<'a> {
     tail: &'a str,
 }
-impl<'a> RenderTail for BufferedTail<'a> {
+impl<'a> ElemTail for BufferedTail<'a> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
         write!(w.writer_escapable(), "{}", self.tail)
     }
@@ -578,7 +615,7 @@ impl<'a> Elem for &'a BufferedElem {
 //     }
 // }
 
-impl RenderTail for () {
+impl ElemTail for () {
     fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
         Ok(())
     }
