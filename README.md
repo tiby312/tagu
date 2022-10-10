@@ -1,5 +1,8 @@
 Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
 
+You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
+Documentation at [docs.rs](https://docs.rs/hypermelon)
+
 
 ## Example
 
