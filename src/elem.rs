@@ -99,7 +99,7 @@ impl<'a> ElemWrite<'a> {
 ///
 /// Alternative trait for Elem that is friendly to dyn trait.
 ///
-pub trait ElemDyn {
+trait ElemDyn {
     fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
     fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
 }
