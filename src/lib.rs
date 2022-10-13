@@ -141,7 +141,7 @@ impl PrettyFmt<'static> {
     pub fn new() -> Self {
         PrettyFmt {
             tabs: 0,
-            tab_char: "  ",
+            tab_char: "\t",
         }
     }
 }
