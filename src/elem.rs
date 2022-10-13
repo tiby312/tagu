@@ -7,7 +7,7 @@ use super::*;
 ///
 /// Writer struct passed to escapable closure elem
 ///
-pub struct ElemWriteEscapable<'a>(WriteWrap<'a>,pub(crate) &'a mut dyn Fmt);
+pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn Fmt);
 
 impl<'a> ElemWriteEscapable<'a> {
     pub fn writer_escapable(&mut self) -> WriteWrap {
@@ -22,7 +22,7 @@ impl<'a> ElemWriteEscapable<'a> {
         tail.render(&mut self.as_elem_write())
     }
     fn as_elem_write(&mut self) -> ElemWrite {
-        ElemWrite(WriteWrap(self.0 .0),self.1)
+        ElemWrite(WriteWrap(self.0 .0), self.1)
     }
 
     pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
@@ -44,13 +44,11 @@ impl<'a> ElemWriteEscapable<'a> {
     }
 }
 
-
-
 ///
 /// Writer struct passed to closure elem
 ///
 #[must_use]
-pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>,pub(crate) &'a mut dyn Fmt);
+pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn Fmt);
 
 impl<'a> ElemWrite<'a> {
     pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
@@ -78,21 +76,21 @@ impl<'a> ElemWrite<'a> {
         Session { elem, writer: self }
     }
 
-    fn tabs(&mut self)->fmt::Result{
+    fn tabs(&mut self) -> fmt::Result {
         self.1.tabs(&mut self.0)
     }
-    fn push(&mut self){
+    fn push(&mut self) {
         self.1.push()
     }
-    fn pop(&mut self){
+    fn pop(&mut self) {
         self.1.pop()
     }
-    fn end_tag(&mut self)->fmt::Result{
+    fn end_tag(&mut self) -> fmt::Result {
         self.1.end_tag(&mut self.0)
     }
 
     fn as_escapable(&mut self) -> ElemWriteEscapable {
-        ElemWriteEscapable(WriteWrap(self.0 .0),self.1)
+        ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
     }
     fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
@@ -102,9 +100,9 @@ impl<'a> ElemWrite<'a> {
         attr::AttrWrite::new(self.0.borrow_mut())
     }
 
-    fn new(w: &'a mut dyn fmt::Write,fmt:&'a mut dyn Fmt) -> Self {
-        ElemWrite(WriteWrap(w),fmt)
-    }
+    // fn new(w: &'a mut dyn fmt::Write, fmt: &'a mut dyn Fmt) -> Self {
+    //     ElemWrite(WriteWrap(w), fmt)
+    // }
 
     fn render_inner<E: Elem>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self)?;
@@ -314,7 +312,6 @@ impl<'a, 'b, E: Elem> SessionEscapable<'a, 'b, E> {
     }
 }
 
-
 impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> Elem for ClosureEscapable<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
@@ -388,13 +385,12 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
-
 impl<D: fmt::Display> Locked for D {}
 impl<D: fmt::Display> Elem for D {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
-        write!(w.writer(), " {}", self)?;
+        write!(w.writer(), "{}", self)?;
         w.end_tag()?;
         Ok(())
     }
@@ -479,9 +475,9 @@ impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single
         w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}{}", start, tag)?;
-        w.writer().write_char(' ')?;
+        //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        write!(w.writer(), " {}", ending)?;
+        write!(w.writer(), "{}", ending)?;
         w.writer_escapable().write_str(">")?;
         w.end_tag()?;
         Ok(())
@@ -516,7 +512,7 @@ impl<D: fmt::Display> ElemTail for ElementTail<D> {
         write!(w.writer(), "{}", &self.tag)?;
         w.writer_escapable().write_char('>')?;
         w.end_tag()?;
-       
+
         Ok(())
     }
 }
@@ -552,9 +548,9 @@ impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
         w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}", tag)?;
-        w.writer().write_char(' ')?;
+        //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        w.writer_escapable().write_str(" >")?;
+        w.writer_escapable().write_str(">")?;
         w.end_tag()?;
         w.push();
         Ok(ElementTail { tag })
@@ -616,7 +612,6 @@ impl<D: fmt::Display> Element<D, ()> {
 //         Ok(BufferedTail { tail: &self.tail })
 //     }
 // }
-
 
 impl ElemTail for () {
     fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
