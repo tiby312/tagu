@@ -76,6 +76,14 @@ impl<'a> ElemWrite<'a> {
         Session { elem, writer: self }
     }
 
+    fn set_inline_mode(&mut self, val: bool) {
+        self.1.set_inline_mode(val)
+    }
+
+    fn is_inline_mode(&mut self) -> bool {
+        self.1.is_inline_mode()
+    }
+
     fn tabs(&mut self) -> fmt::Result {
         self.1.tabs(&mut self.0)
     }
@@ -181,8 +189,6 @@ impl<'a> Elem for DynamicElement<'a> {
     }
 }
 
-
-
 ///
 /// Main building block.
 ///
@@ -221,6 +227,13 @@ pub trait Elem {
         Self: Sized,
     {
         Append { top: self, bottom }
+    }
+
+    fn inline(self) -> Inliner<Self>
+    where
+        Self: Sized,
+    {
+        Inliner { elem: self }
     }
 }
 
@@ -393,7 +406,7 @@ impl<D: fmt::Display> Elem for D {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer(), "{}", self)?;
-        w.end_tag()?;
+        //w.end_tag()?;
         Ok(())
     }
 }
@@ -416,7 +429,7 @@ impl<D: fmt::Display> Elem for RawEscapable<D> {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer_escapable(), " {}", self.data)?;
-        w.end_tag()?;
+        //w.end_tag()?;
         Ok(())
     }
 }
@@ -509,13 +522,53 @@ pub struct ElementTail<D> {
 impl<D: fmt::Display> ElemTail for ElementTail<D> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
         w.pop();
+
+        //w.end_tag()?;
         w.tabs()?;
+
         w.writer_escapable().write_str("</")?;
         write!(w.writer(), "{}", &self.tag)?;
         w.writer_escapable().write_char('>')?;
         w.end_tag()?;
 
         Ok(())
+    }
+}
+
+pub struct InlinerTail<K: ElemTail> {
+    reset: bool,
+    tail: K,
+}
+
+impl<D: ElemTail> ElemTail for InlinerTail<D> {
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        self.tail.render(w)?;
+
+        if self.reset {
+            w.set_inline_mode(false);
+            w.end_tag()?;
+        }
+
+        Ok(())
+    }
+}
+pub struct Inliner<E> {
+    elem: E,
+}
+impl<E> Locked for Inliner<E> {}
+impl<E: Elem> Elem for Inliner<E> {
+    type Tail = InlinerTail<E::Tail>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let reset = if w.is_inline_mode() {
+            false
+        } else {
+            w.tabs()?;
+            w.set_inline_mode(true);
+            true
+        };
+        let tail = self.elem.render_head(w)?;
+
+        Ok(InlinerTail { reset, tail })
     }
 }
 
@@ -553,7 +606,9 @@ impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
         //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
         w.writer_escapable().write_str(">")?;
+
         w.end_tag()?;
+
         w.push();
         Ok(ElementTail { tag })
     }

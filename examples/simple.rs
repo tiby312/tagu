@@ -15,7 +15,9 @@ fn main() -> std::fmt::Result {
         ("style", "fill:blue")
     ));
 
-    let style = build::elem("style").append(".test{fill:none;stroke:white;stroke-width:3}");
+    let style = build::elem("style")
+        .inline()
+        .append(".test{fill:none;stroke:white;stroke-width:3}");
 
     let svg = build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),

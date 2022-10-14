@@ -6,7 +6,7 @@ fn main() -> std::fmt::Result {
         .with_ending("")
         .chain(build::elem("html"));
 
-    let style = build::elem("style").append(
+    let style = build::elem("style").inline().append(
         "table, th, td {
         border: 1px solid black;
         border-collapse: collapse;
@@ -25,15 +25,23 @@ fn main() -> std::fmt::Result {
             build::from_closure(move |w| {
                 if i % 2 == 0 {
                     let columns = elems!(
-                        build::elem("th").append(format_move!("Hay {}:1", i)),
-                        build::elem("th").append(format_move!("Hay {}:2", i)),
-                        build::elem("th").append(format_move!("Hay {}:3", i))
+                        build::elem("th")
+                            .inline()
+                            .append(format_move!("Hay {}:1", i)),
+                        build::elem("th")
+                            .inline()
+                            .append(format_move!("Hay {}:2", i)),
+                        build::elem("th")
+                            .inline()
+                            .append(format_move!("Hay {}:3", i))
                     );
 
-                    w.render(build::elem("tr").append(columns))?;
+                    w.render(build::elem("tr").inline().append(columns))?;
                 } else {
-                    let column = build::elem("th").append(format_move!("Hay {}:1", i));
-                    w.render(build::elem("tr").append(column))?;
+                    let column = build::elem("th")
+                        .inline()
+                        .append(format_move!("Hay {}:1", i));
+                    w.render(build::elem("tr").inline().append(column))?;
                 }
                 Ok(())
             })

@@ -131,17 +131,21 @@ pub trait Fmt {
     fn pop(&mut self);
     fn tabs(&mut self, w: &mut dyn fmt::Write) -> fmt::Result;
     fn end_tag(&mut self, w: &mut dyn fmt::Write) -> fmt::Result;
+    fn set_inline_mode(&mut self, val: bool);
+    fn is_inline_mode(&mut self) -> bool;
 }
 
 pub struct PrettyFmt<'a> {
     tabs: usize,
     tab_char: &'a str,
+    inline: bool,
 }
 impl PrettyFmt<'static> {
     pub fn new() -> Self {
         PrettyFmt {
             tabs: 0,
             tab_char: "\t",
+            inline: false,
         }
     }
 }
@@ -150,26 +154,42 @@ impl<'a> PrettyFmt<'a> {
         PrettyFmt {
             tabs: self.tabs,
             tab_char: tab,
+            inline: self.inline,
         }
     }
 }
 
 impl Fmt for PrettyFmt<'_> {
+    fn set_inline_mode(&mut self, val: bool) {
+        self.inline = val;
+    }
+    fn is_inline_mode(&mut self) -> bool {
+        self.inline
+    }
     fn tabs(&mut self, w: &mut dyn fmt::Write) -> fmt::Result {
-        for _ in 0..self.tabs {
-            write!(w, "{}", self.tab_char)?;
+        if !self.inline {
+            for _ in 0..self.tabs {
+                write!(w, "{}", self.tab_char)?;
+            }
         }
 
         Ok(())
     }
     fn push(&mut self) {
-        self.tabs += 1;
+        if !self.inline {
+            self.tabs += 1;
+        }
     }
     fn pop(&mut self) {
-        self.tabs -= 1;
+        if !self.inline {
+            self.tabs -= 1;
+        }
     }
     fn end_tag(&mut self, w: &mut dyn fmt::Write) -> fmt::Result {
-        writeln!(w, "")
+        if !self.inline {
+            writeln!(w, "")?;
+        }
+        Ok(())
     }
 }
 
@@ -182,5 +202,10 @@ impl Fmt for NoFmt {
     fn pop(&mut self) {}
     fn end_tag(&mut self, _: &mut dyn fmt::Write) -> fmt::Result {
         Ok(())
+    }
+    fn set_inline_mode(&mut self, val: bool) {}
+
+    fn is_inline_mode(&mut self) -> bool {
+        true
     }
 }

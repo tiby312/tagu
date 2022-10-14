@@ -10,7 +10,7 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let polygon = build::elem("polygon").with(attrs!(
+    let polygon = build::single("polygon").with(attrs!(
         ("stroke", "black"),
         ("stroke-width", 2),
         ("fill", "green"),
