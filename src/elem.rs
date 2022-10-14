@@ -232,7 +232,7 @@ pub trait Elem {
     ///
     /// When using pretty print rendering, force this element and descendants to be written out
     /// inline. When using noFmt, this has no effect.
-    /// 
+    ///
     fn inline(self) -> Inliner<Self>
     where
         Self: Sized,
@@ -410,7 +410,7 @@ impl<D: fmt::Display> Elem for D {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer(), "{}", self)?;
-        //w.end_tag()?;
+        w.end_tag()?;
         Ok(())
     }
 }
@@ -433,7 +433,7 @@ impl<D: fmt::Display> Elem for RawEscapable<D> {
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer_escapable(), " {}", self.data)?;
-        //w.end_tag()?;
+        w.end_tag()?;
         Ok(())
     }
 }

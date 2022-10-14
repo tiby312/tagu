@@ -6,16 +6,16 @@ fn main() -> std::fmt::Result {
         .with_ending("")
         .chain(build::elem("html"));
 
-    let style = build::elem("style").inline().append(
+    let style = build::elem("style").append(
         "table, th, td {
-        border: 1px solid black;
-        border-collapse: collapse;
-        animation: mymove 5s infinite;
-      }
-      @keyframes mymove {
-          from {background-color: red;}
-          to {background-color: blue;}
-      }",
+border: 1px solid black;
+border-collapse: collapse;
+animation: mymove 5s infinite;
+}
+@keyframes mymove {
+    from {background-color: red;}
+    to {background-color: blue;}
+}",
     );
 
     let table = {
