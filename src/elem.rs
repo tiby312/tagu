@@ -229,6 +229,10 @@ pub trait Elem {
         Append { top: self, bottom }
     }
 
+    ///
+    /// When using pretty print rendering, force this element and descendants to be written out
+    /// inline. When using noFmt, this has no effect.
+    /// 
     fn inline(self) -> Inliner<Self>
     where
         Self: Sized,

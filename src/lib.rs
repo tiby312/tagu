@@ -203,7 +203,7 @@ impl Fmt for NoFmt {
     fn end_tag(&mut self, _: &mut dyn fmt::Write) -> fmt::Result {
         Ok(())
     }
-    fn set_inline_mode(&mut self, val: bool) {}
+    fn set_inline_mode(&mut self, _: bool) {}
 
     fn is_inline_mode(&mut self) -> bool {
         true
