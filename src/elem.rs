@@ -623,56 +623,56 @@ impl<D: fmt::Display> Element<D, ()> {
     }
 }
 
-// ///
-// /// A string buffered element
-// ///
-// /// If you need to render something over, and over again,
-// /// you can instead buffer it to a string using this struct
-// /// for better performance at the cost of more memory.
-// ///
-// /// Notice that RenderElem is only implemented for a &BufferedElem.
-// ///
-// pub struct BufferedElem {
-//     head: String,
-//     tail: String,
-// }
+///
+/// A string buffered element
+///
+/// If you need to render something over, and over again,
+/// you can instead buffer it to a string using this struct
+/// for better performance at the cost of more memory.
+///
+/// Notice that RenderElem is only implemented for a &BufferedElem.
+///
+pub struct BufferedElem {
+    head: String,
+    tail: String,
+}
 
-// impl BufferedElem {
-//     pub fn new<E: Elem + Locked>(elem: E) -> Result<Self, fmt::Error> {
-//         let mut head = String::new();
-//         let mut tail = String::new();
-//         let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
-//         t.render(&mut ElemWrite::new(&mut tail))?;
-//         head.shrink_to_fit();
-//         tail.shrink_to_fit();
-//         Ok(BufferedElem { head, tail })
-//     }
+impl BufferedElem {
+    pub fn new<E: Elem + Locked,F:Fmt>(elem: E,mut fmt:F) -> Result<Self, fmt::Error> {
+        let mut head = String::new();
+        let mut tail = String::new();
+        let t = elem.render_head(&mut ElemWrite(WriteWrap(&mut head),&mut fmt))?;
+        t.render(&mut ElemWrite(WriteWrap(&mut tail),&mut fmt))?;
+        head.shrink_to_fit();
+        tail.shrink_to_fit();
+        Ok(BufferedElem { head, tail })
+    }
 
-//     pub fn into_parts(self) -> (String, String) {
-//         (self.head, self.tail)
-//     }
-// }
+    pub fn into_parts(self) -> (String, String) {
+        (self.head, self.tail)
+    }
+}
 
-// ///
-// /// A buffered element's tail
-// ///
-// pub struct BufferedTail<'a> {
-//     tail: &'a str,
-// }
-// impl<'a> ElemTail for BufferedTail<'a> {
-//     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-//         write!(w.writer_escapable(), "{}", self.tail)
-//     }
-// }
-// impl<'a> Locked for &'a BufferedElem {}
+///
+/// A buffered element's tail
+///
+pub struct BufferedTail<'a> {
+    tail: &'a str,
+}
+impl<'a> ElemTail for BufferedTail<'a> {
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        write!(w.writer_escapable(), "{}", self.tail)
+    }
+}
+impl<'a> Locked for &'a BufferedElem {}
 
-// impl<'a> Elem for &'a BufferedElem {
-//     type Tail = BufferedTail<'a>;
-//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-//         write!(w.writer_escapable(), "{}", self.head)?;
-//         Ok(BufferedTail { tail: &self.tail })
-//     }
-// }
+impl<'a> Elem for &'a BufferedElem {
+    type Tail = BufferedTail<'a>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        write!(w.writer_escapable(), "{}", self.head)?;
+        Ok(BufferedTail { tail: &self.tail })
+    }
+}
 
 impl ElemTail for () {
     fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
