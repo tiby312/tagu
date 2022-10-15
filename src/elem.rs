@@ -7,7 +7,7 @@ use super::*;
 ///
 /// Writer struct passed to escapable closure elem
 ///
-pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn Fmt);
+pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWriteEscapable<'a> {
     pub fn writer_escapable(&mut self) -> WriteWrap {
@@ -48,7 +48,7 @@ impl<'a> ElemWriteEscapable<'a> {
 /// Writer struct passed to closure elem
 ///
 #[must_use]
-pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn Fmt);
+pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWrite<'a> {
     pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
@@ -638,11 +638,11 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: Elem + Locked,F:Fmt>(elem: E,mut fmt:F) -> Result<Self, fmt::Error> {
+    pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
-        let t = elem.render_head(&mut ElemWrite(WriteWrap(&mut head),&mut fmt))?;
-        t.render(&mut ElemWrite(WriteWrap(&mut tail),&mut fmt))?;
+        let t = elem.render_head(&mut ElemWrite(WriteWrap(&mut head), &mut fmt))?;
+        t.render(&mut ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
         head.shrink_to_fit();
         tail.shrink_to_fit();
         Ok(BufferedElem { head, tail })
