@@ -7,7 +7,7 @@ use super::*;
 ///
 /// Writer struct passed to escapable closure elem
 ///
-pub struct ElemWriteEscapable<'a>(WriteWrap<'a>);
+pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWriteEscapable<'a> {
     pub fn writer_escapable(&mut self) -> WriteWrap {
@@ -22,7 +22,7 @@ impl<'a> ElemWriteEscapable<'a> {
         tail.render(&mut self.as_elem_write())
     }
     fn as_elem_write(&mut self) -> ElemWrite {
-        ElemWrite(WriteWrap(self.0 .0))
+        ElemWrite(WriteWrap(self.0 .0), self.1)
     }
 
     pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
@@ -48,7 +48,7 @@ impl<'a> ElemWriteEscapable<'a> {
 /// Writer struct passed to closure elem
 ///
 #[must_use]
-pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>);
+pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWrite<'a> {
     pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
@@ -75,8 +75,30 @@ impl<'a> ElemWrite<'a> {
         let elem = func();
         Session { elem, writer: self }
     }
+
+    fn set_inline_mode(&mut self, val: bool) {
+        self.1.set_inline_mode(val)
+    }
+
+    fn is_inline_mode(&mut self) -> bool {
+        self.1.is_inline_mode()
+    }
+
+    fn tabs(&mut self) -> fmt::Result {
+        self.1.tabs(&mut self.0)
+    }
+    fn push(&mut self) {
+        self.1.push()
+    }
+    fn pop(&mut self) {
+        self.1.pop()
+    }
+    fn end_tag(&mut self) -> fmt::Result {
+        self.1.end_tag(&mut self.0)
+    }
+
     fn as_escapable(&mut self) -> ElemWriteEscapable {
-        ElemWriteEscapable(WriteWrap(self.0 .0))
+        ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
     }
     fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
@@ -86,9 +108,9 @@ impl<'a> ElemWrite<'a> {
         attr::AttrWrite::new(self.0.borrow_mut())
     }
 
-    fn new(w: &'a mut dyn fmt::Write) -> Self {
-        ElemWrite(WriteWrap(w))
-    }
+    // fn new(w: &'a mut dyn fmt::Write, fmt: &'a mut dyn Fmt) -> Self {
+    //     ElemWrite(WriteWrap(w), fmt)
+    // }
 
     fn render_inner<E: Elem>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self)?;
@@ -206,6 +228,17 @@ pub trait Elem {
     {
         Append { top: self, bottom }
     }
+
+    ///
+    /// When using pretty print rendering, force this element and descendants to be written out
+    /// inline. When using noFmt, this has no effect.
+    ///
+    fn inline(self) -> Inliner<Self>
+    where
+        Self: Sized,
+    {
+        Inliner { elem: self }
+    }
 }
 
 ///
@@ -298,15 +331,6 @@ impl<'a, 'b, E: Elem> SessionEscapable<'a, 'b, E> {
     }
 }
 
-impl<D: fmt::Display> Locked for D {}
-impl<D: fmt::Display> Elem for D {
-    type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        write!(w.writer(), " {}", self)?;
-        Ok(())
-    }
-}
-
 impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> Elem for ClosureEscapable<I> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
@@ -380,6 +404,17 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
+impl<D: fmt::Display> Locked for D {}
+impl<D: fmt::Display> Elem for D {
+    type Tail = ();
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        //w.tabs()?;
+        write!(w.writer(), "{}", self)?;
+        w.end_tag()?;
+        Ok(())
+    }
+}
+
 ///
 /// A raw escapable element
 ///
@@ -396,7 +431,9 @@ impl<D: fmt::Display> RawEscapable<D> {
 impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        //w.tabs()?;
         write!(w.writer_escapable(), " {}", self.data)?;
+        w.end_tag()?;
         Ok(())
     }
 }
@@ -454,12 +491,14 @@ impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single
             start,
             ending,
         } = self;
+        w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}{}", start, tag)?;
-        w.writer().write_char(' ')?;
+        //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        write!(w.writer(), " {}", ending)?;
+        write!(w.writer(), "{}", ending)?;
         w.writer_escapable().write_str(">")?;
+        w.end_tag()?;
         Ok(())
     }
 }
@@ -486,9 +525,54 @@ pub struct ElementTail<D> {
 
 impl<D: fmt::Display> ElemTail for ElementTail<D> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        w.pop();
+
+        //w.end_tag()?;
+        w.tabs()?;
+
         w.writer_escapable().write_str("</")?;
         write!(w.writer(), "{}", &self.tag)?;
-        w.writer_escapable().write_char('>')
+        w.writer_escapable().write_char('>')?;
+        w.end_tag()?;
+
+        Ok(())
+    }
+}
+
+pub struct InlinerTail<K: ElemTail> {
+    reset: bool,
+    tail: K,
+}
+
+impl<D: ElemTail> ElemTail for InlinerTail<D> {
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        self.tail.render(w)?;
+
+        if self.reset {
+            w.set_inline_mode(false);
+            w.end_tag()?;
+        }
+
+        Ok(())
+    }
+}
+pub struct Inliner<E> {
+    elem: E,
+}
+impl<E> Locked for Inliner<E> {}
+impl<E: Elem> Elem for Inliner<E> {
+    type Tail = InlinerTail<E::Tail>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let reset = if w.is_inline_mode() {
+            false
+        } else {
+            w.tabs()?;
+            w.set_inline_mode(true);
+            true
+        };
+        let tail = self.elem.render_head(w)?;
+
+        Ok(InlinerTail { reset, tail })
     }
 }
 
@@ -520,13 +604,16 @@ impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
     type Tail = ElementTail<D>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Element { tag, attr } = self;
-
+        w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}", tag)?;
-        w.writer().write_char(' ')?;
+        //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
-        w.writer_escapable().write_str(" >")?;
+        w.writer_escapable().write_str(">")?;
 
+        w.end_tag()?;
+
+        w.push();
         Ok(ElementTail { tag })
     }
 }
@@ -551,11 +638,11 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: Elem + Locked>(elem: E) -> Result<Self, fmt::Error> {
+    pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
-        let t = elem.render_head(&mut ElemWrite::new(&mut head))?;
-        t.render(&mut ElemWrite::new(&mut tail))?;
+        let t = elem.render_head(&mut ElemWrite(WriteWrap(&mut head), &mut fmt))?;
+        t.render(&mut ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
         head.shrink_to_fit();
         tail.shrink_to_fit();
         Ok(BufferedElem { head, tail })
@@ -586,34 +673,6 @@ impl<'a> Elem for &'a BufferedElem {
         Ok(BufferedTail { tail: &self.tail })
     }
 }
-
-// pub struct DisplayEscapable<D, B> {
-//     start: D,
-//     end: B,
-// }
-// pub struct DisplayEscapableTail<'a, D> {
-//     end: &'a D,
-// }
-// impl<A: fmt::Display, B: fmt::Display> DisplayEscapable<A, B> {
-//     pub fn new(head: A, tail: B) -> Self {
-//         DisplayEscapable {
-//             start: head,
-//             end: tail,
-//         }
-//     }
-// }
-// impl<'b, D: fmt::Display> RenderTail for DisplayEscapableTail<'b, D> {
-//     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-//         write!(w.writer_escapable(), "{}", self.end)
-//     }
-// }
-// impl<'a, A: fmt::Display, B: fmt::Display> Elem for &'a DisplayEscapable<A, B> {
-//     type Tail = DisplayEscapableTail<'a, B>;
-//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-//         write!(w.writer_escapable(), "{}", self.start)?;
-//         Ok(DisplayEscapableTail { end: &self.end })
-//     }
-// }
 
 impl ElemTail for () {
     fn render(self, _: &mut ElemWrite) -> std::fmt::Result {

@@ -40,7 +40,7 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
     fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
         let AttrChain { first, second } = self;
         first.render(w)?;
-        w.writer().write_str(" ")?;
+        //w.writer().write_str(" ")?;
         second.render(w)
     }
 }

@@ -1,8 +1,7 @@
-//! Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
-//! 
+//! Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust.
+//!
 //! You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
 //! Documentation at [docs.rs](https://docs.rs/hypermelon)
-
 
 pub mod tools;
 use std::fmt;
@@ -10,6 +9,7 @@ pub mod attr;
 pub mod build;
 pub mod elem;
 use attr::*;
+pub mod render;
 
 use elem::*;
 use tools::WriteWrap;
@@ -25,17 +25,15 @@ pub mod prelude {
 ///
 /// Render elements to a writer
 ///
-pub fn render<E: Elem + Locked, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
-    ElemWrite(WriteWrap(&mut writer)).render(elem)
+pub fn render<E: Elem + Locked, W: fmt::Write>(elem: E, writer: W) -> fmt::Result {
+    render::Renderer::new().render(elem, writer)
 }
 
 ///
 /// Render elements to a writer that allows for escaping elements.
 ///
-pub fn render_escapable<E: Elem, W: fmt::Write>(elem: E, mut writer: W) -> fmt::Result {
-    let e = &mut ElemWrite(WriteWrap(&mut writer));
-    let tail = elem.render_head(e)?;
-    tail.render(e)
+pub fn render_escapable<E: Elem, W: fmt::Write>(elem: E, writer: W) -> fmt::Result {
+    render::Renderer::new().render_escapable(elem, writer)
 }
 
 ///
