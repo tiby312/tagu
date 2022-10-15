@@ -1,3 +1,7 @@
+//!
+//! Functionality to change rendering pretty print vs none.
+//!
+
 use super::*;
 pub struct Renderer<D: Fmt> {
     fmt: D,
@@ -9,6 +13,13 @@ impl Renderer<PrettyFmt<'static>> {
         }
     }
 }
+
+impl Default for Renderer<PrettyFmt<'static>> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<D: Fmt> Renderer<D> {
     pub fn with_fmt<K: Fmt>(self, a: K) -> Renderer<K> {
         Renderer { fmt: a }
@@ -45,6 +56,13 @@ pub struct PrettyFmt<'a> {
     tab_char: &'a str,
     inline: bool,
 }
+
+impl Default for PrettyFmt<'static> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PrettyFmt<'static> {
     pub fn new() -> Self {
         PrettyFmt {
@@ -55,7 +73,7 @@ impl PrettyFmt<'static> {
     }
 }
 impl<'a> PrettyFmt<'a> {
-    pub fn with_tab<'b>(self, tab: &'b str) -> PrettyFmt<'b> {
+    pub fn with_tab(self, tab: &str) -> PrettyFmt {
         PrettyFmt {
             tabs: self.tabs,
             tab_char: tab,
@@ -81,18 +99,18 @@ impl Fmt for PrettyFmt<'_> {
         Ok(())
     }
     fn push(&mut self) {
-        if !self.inline {
-            self.tabs += 1;
-        }
+        //if !self.inline {
+        self.tabs += 1;
+        //}
     }
     fn pop(&mut self) {
-        if !self.inline {
-            self.tabs -= 1;
-        }
+        //if !self.inline {
+        self.tabs -= 1;
+        //}
     }
     fn end_tag(&mut self, w: &mut dyn fmt::Write) -> fmt::Result {
         if !self.inline {
-            writeln!(w, "")?;
+            writeln!(w)?;
         }
         Ok(())
     }
