@@ -24,16 +24,24 @@ fn main() -> std::fmt::Result {
         ("style", "fill:blue")
     ));
 
-    let style = build::elem("style").append(".test{fill:none;stroke:white;stroke-width:3}");
+    let style = build::elem("style")
+        .inline()
+        .append(".test{fill:none;stroke:white;stroke-width:3}");
 
     let svg = build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = (0..50)
-        .step_by(10)
-        .map(|r| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
+    let rows = (0..50).step_by(10).map(|r| {
+        if r % 20 == 0 {
+            build::single("circle")
+                .with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
+                .either_a()
+        } else {
+            build::from_closure(|_| Ok(())).either_b()
+        }
+    });
 
     let table = build::elem("g")
         .with(("class", "test"))
@@ -59,14 +67,10 @@ See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/as
 ### Which method to use?
 
 You can append elements via building of long adaptor chains, or you can render
-elements to a writer on the fly. There are pros and cons to both. With chaining,
+elements to a writer on the fly. With chaining,
 you don't have to worry about handling errors because nothing actually gets written out
-as you're chaining. A downside is that you can't build elements differently based on a condition
-as you go. This is because if you have an if statement, for example, the types returned by each block have to be the same.
-So you can't have one block return 2 elements, and another block return 3 elements.
-
-Basically its a tradeoff between more flexibility in writing building blocks (if conditions/loops etc), and flexibility in passing
-the build blocks around. You can mix and match because you can make elements from closures and then chain those elements together.
+as you're chaining. 
+You can mix and match because you can make elements from closures and then chain those elements together.
 
 
 ### Is there escape XML protection?

@@ -239,6 +239,20 @@ pub trait Elem {
     {
         Inliner { elem: self }
     }
+
+    fn either_a<T>(self) -> Either<Self, T>
+    where
+        Self: Sized,
+    {
+        Either::A(self)
+    }
+
+    fn either_b<T>(self) -> Either<T, Self>
+    where
+        Self: Sized,
+    {
+        Either::B(self)
+    }
 }
 
 ///
@@ -265,6 +279,30 @@ impl<A: Elem, B: Elem> Elem for Append<A, B> {
         let tail = top.render_head(w)?;
         w.render_inner(bottom)?;
         Ok(tail)
+    }
+}
+
+pub enum Either<A, B> {
+    A(A),
+    B(B),
+}
+impl<A: Locked, B: Locked> Locked for Either<A, B> {}
+
+impl<A: ElemTail, B: ElemTail> ElemTail for Either<A, B> {
+    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+        match self {
+            Either::A(a) => a.render(w),
+            Either::B(a) => a.render(w),
+        }
+    }
+}
+impl<A: Elem, B: Elem> Elem for Either<A, B> {
+    type Tail = Either<A::Tail, B::Tail>;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        match self {
+            Either::A(a) => Ok(Either::A(a.render_head(w)?)),
+            Either::B(a) => Ok(Either::B(a.render_head(w)?)),
+        }
     }
 }
 

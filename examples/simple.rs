@@ -24,9 +24,15 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = (0..50)
-        .step_by(10)
-        .map(|r| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
+    let rows = (0..50).step_by(10).map(|r| {
+        if r % 20 == 0 {
+            build::single("circle")
+                .with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
+                .either_a()
+        } else {
+            build::from_closure(|_| Ok(())).either_b()
+        }
+    });
 
     let table = build::elem("g")
         .with(("class", "test"))
