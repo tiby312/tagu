@@ -27,20 +27,20 @@ animation: mymove 5s infinite;
                     let columns = elems!(
                         build::elem("th")
                             .inline()
-                            .append(format_move!("Hay {}:1", i)),
+                            .append(build::raw(format_move!("Hay {}:1", i))),
                         build::elem("th")
                             .inline()
-                            .append(format_move!("Hay {}:2", i)),
+                            .append(build::raw(format_move!("Hay {}:2", i))),
                         build::elem("th")
                             .inline()
-                            .append(format_move!("Hay {}:3", i))
+                            .append(build::raw(format_move!("Hay {}:3", i)))
                     );
 
                     w.render(build::elem("tr").inline().append(columns))?;
                 } else {
                     let column = build::elem("th")
                         .inline()
-                        .append(format_move!("Hay {}:1", i));
+                        .append(build::raw(format_move!("Hay {}:1", i)));
                     w.render(build::elem("tr").inline().append(column))?;
                 }
                 Ok(())

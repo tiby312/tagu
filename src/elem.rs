@@ -240,18 +240,11 @@ pub trait Elem {
         Inliner { elem: self }
     }
 
-    fn either_a<T>(self) -> Either<Self, T>
+    fn some(self) -> Option<Self>
     where
         Self: Sized,
     {
-        Either::A(self)
-    }
-
-    fn either_b<T>(self) -> Either<T, Self>
-    where
-        Self: Sized,
-    {
-        Either::B(self)
+        Some(self)
     }
 }
 
@@ -282,26 +275,23 @@ impl<A: Elem, B: Elem> Elem for Append<A, B> {
     }
 }
 
-pub enum Either<A, B> {
-    A(A),
-    B(B),
-}
-impl<A: Locked, B: Locked> Locked for Either<A, B> {}
+impl<A: Locked> Locked for Option<A> {}
 
-impl<A: ElemTail, B: ElemTail> ElemTail for Either<A, B> {
+impl<A: ElemTail> ElemTail for Option<A> {
     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-        match self {
-            Either::A(a) => a.render(w),
-            Either::B(a) => a.render(w),
+        if let Some(a) = self {
+            a.render(w)?;
         }
+        Ok(())
     }
 }
-impl<A: Elem, B: Elem> Elem for Either<A, B> {
-    type Tail = Either<A::Tail, B::Tail>;
+impl<A: Elem> Elem for Option<A> {
+    type Tail = Option<A::Tail>;
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        match self {
-            Either::A(a) => Ok(Either::A(a.render_head(w)?)),
-            Either::B(a) => Ok(Either::B(a.render_head(w)?)),
+        if let Some(a) = self {
+            Ok(Some(a.render_head(w)?))
+        } else {
+            Ok(None)
         }
     }
 }
@@ -442,14 +432,31 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
-impl<D: fmt::Display> Locked for D {}
-impl<D: fmt::Display> Elem for D {
+pub struct Raw<D> {
+    data: D,
+}
+impl<D: fmt::Display> Raw<D> {
+    pub fn new(data: D) -> Raw<D> {
+        Raw { data }
+    }
+}
+
+impl<D: fmt::Display> Locked for Raw<D> {}
+impl<D: fmt::Display> Elem for Raw<D> {
     type Tail = ();
     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
-        write!(w.writer(), "{}", self)?;
+        write!(w.writer(), " {}", self.data)?;
         w.end_tag()?;
         Ok(())
+    }
+}
+
+impl<'a> Locked for &'a str {}
+impl<'a> Elem for &'a str {
+    type Tail = ();
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        Raw::new(self).render_head(w)
     }
 }
 

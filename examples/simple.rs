@@ -25,13 +25,23 @@ fn main() -> std::fmt::Result {
     ));
 
     let rows = (0..50).step_by(10).map(|r| {
-        if r % 20 == 0 {
+        let a = if r % 20 == 0 {
             build::single("circle")
                 .with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
-                .either_a()
+                .some()
         } else {
-            build::from_closure(|_| Ok(())).either_b()
-        }
+            None
+        };
+
+        let b = if r % 20 != 0 {
+            build::single("circle")
+                .with(attrs!(("cx", 30.0), ("cy", 30.0), ("r", r)))
+                .some()
+        } else {
+            None
+        };
+
+        a.chain(b)
     });
 
     let table = build::elem("g")

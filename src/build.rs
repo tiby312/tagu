@@ -18,6 +18,10 @@ pub fn raw_escapable<D: fmt::Display>(data: D) -> RawEscapable<D> {
     RawEscapable::new(data)
 }
 
+pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
+    Raw::new(data)
+}
+
 ///
 /// Create an escapable element from a closure
 ///
