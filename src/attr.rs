@@ -19,6 +19,22 @@ pub trait Attr {
             second: other,
         }
     }
+
+    fn some(self) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        Some(self)
+    }
+}
+
+impl<A: Attr> Attr for Option<A> {
+    fn render(self, w: &mut AttrWrite) -> std::fmt::Result {
+        if let Some(a) = self {
+            a.render(w)?;
+        }
+        Ok(())
+    }
 }
 
 impl Attr for () {
