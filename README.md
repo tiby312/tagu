@@ -1,4 +1,4 @@
-Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. Use has control over formatting via the inline() function.
+Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. Use has control over formatting via the `inline()` function.
 
 You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
 Documentation at [docs.rs](https://docs.rs/hypermelon)
@@ -67,7 +67,7 @@ fn main() -> std::fmt::Result {
 ### Output
 
 ### Text:
-```
+```html
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 	<style> .test{fill:none;stroke:white;stroke-width:3}</style>
 	<rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
@@ -99,7 +99,7 @@ You can mix and match because you can make elements from closures and then chain
 
 ### Inline function
 
-By default tags insertion newlines and tabs. If you call inline() on an element, all elements
+By default tags insertion newlines and tabs. If you call `inline()` on an element, all elements
 within it will be inlined. 
 
 ### Is there escape XML protection?
