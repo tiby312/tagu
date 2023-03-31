@@ -77,13 +77,17 @@ fn main() -> std::fmt::Result {
 	<rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
 	<g class="test">
 		<circle cx="50" cy="50" r="0"/>
-		<rect width="30" height="30"/>
+		<rect x="45" y="45" width="10" height="10"/>
+		<circle cx="50" cy="50" r="10"/>
+		<rect x="35" y="35" width="30" height="30"/>
 		<circle cx="50" cy="50" r="20"/>
-		<rect width="30" height="30"/>
+		<rect x="25" y="25" width="50" height="50"/>
+		<circle cx="50" cy="50" r="30"/>
+		<rect x="15" y="15" width="70" height="70"/>
 		<circle cx="50" cy="50" r="40"/>
+		<rect x="5" y="5" width="90" height="90"/>
 	</g>
-</svg>
-```
+</svg>```
 #### Image:
 
 <img src="./assets/svg_example.svg" alt="demo">
