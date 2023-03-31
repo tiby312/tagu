@@ -34,26 +34,19 @@ fn main() -> std::fmt::Result {
     ));
 
     let rows = (0..50).step_by(5).map(|r| {
-        let a = if r % 10 == 0 {
-            build::single("circle")
-                .with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
-                .some()
-        } else {
-            None
-        };
+        let o = r % 10 == 0;
 
-        let b = if r % 10 != 0 {
-            build::single("rect")
-                .with(attrs!(
-                    ("x", 50 - r),
-                    ("y", 50 - r),
-                    ("width", r * 2),
-                    ("height", r * 2)
-                ))
-                .some()
-        } else {
-            None
-        };
+        let a =
+            o.then(|| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
+
+        let b = (!o).then(|| {
+            build::single("rect").with(attrs!(
+                ("x", 50 - r),
+                ("y", 50 - r),
+                ("width", r * 2),
+                ("height", r * 2)
+            ))
+        });
 
         a.chain(b)
     });
@@ -66,6 +59,7 @@ fn main() -> std::fmt::Result {
 
     hypermelon::render(all, hypermelon::stdout_fmt())
 }
+
 ```
 
 ### Output Text:
