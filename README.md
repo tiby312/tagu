@@ -85,7 +85,8 @@ fn main() -> std::fmt::Result {
 		<circle cx="50" cy="50" r="40"/>
 		<rect x="5" y="5" width="90" height="90"/>
 	</g>
-</svg>```
+</svg>
+```
 
 
 ### Output Image:
