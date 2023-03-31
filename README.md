@@ -33,8 +33,8 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = (0..50).step_by(10).map(|r| {
-        let a = if r % 20 == 0 {
+    let rows = (0..50).step_by(5).map(|r| {
+        let a = if r % 10 == 0 {
             build::single("circle")
                 .with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))
                 .some()
@@ -42,9 +42,14 @@ fn main() -> std::fmt::Result {
             None
         };
 
-        let b = if r % 20 != 0 {
+        let b = if r % 10 != 0 {
             build::single("rect")
-                .with(attrs!(("width", 30.0), ("height", 30.0)))
+                .with(attrs!(
+                    ("x", 50 - r),
+                    ("y", 50 - r),
+                    ("width", r * 2),
+                    ("height", r * 2)
+                ))
                 .some()
         } else {
             None
@@ -61,7 +66,6 @@ fn main() -> std::fmt::Result {
 
     hypermelon::render(all, hypermelon::stdout_fmt())
 }
-
 ```
 
 ### Output
