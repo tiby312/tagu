@@ -1,4 +1,4 @@
-Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. 
+Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. Use has control over formatting via the inline() function.
 
 You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
 Documentation at [docs.rs](https://docs.rs/hypermelon)
@@ -43,8 +43,8 @@ fn main() -> std::fmt::Result {
         };
 
         let b = if r % 20 != 0 {
-            build::single("circle")
-                .with(attrs!(("cx", 30.0), ("cy", 30.0), ("r", r)))
+            build::single("rect")
+                .with(attrs!(("width", 30.0), ("height", 30.0)))
                 .some()
         } else {
             None
@@ -61,16 +61,31 @@ fn main() -> std::fmt::Result {
 
     hypermelon::render(all, hypermelon::stdout_fmt())
 }
+
 ```
 
 ### Output
+
+### Text:
+```
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+	<style> .test{fill:none;stroke:white;stroke-width:3}</style>
+	<rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
+	<g class="test">
+		<circle cx="50" cy="50" r="0"/>
+		<rect width="30" height="30"/>
+		<circle cx="50" cy="50" r="20"/>
+		<rect width="30" height="30"/>
+		<circle cx="50" cy="50" r="40"/>
+	</g>
+</svg>
+```
+#### Image:
 
 <img src="./assets/svg_example.svg" alt="demo">
 
 
 See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
-
-
 
 
 
@@ -82,6 +97,10 @@ you don't have to worry about handling errors because nothing actually gets writ
 as you're chaining. 
 You can mix and match because you can make elements from closures and then chain those elements together.
 
+### Inline function
+
+By default tags insertion newlines and tabs. If you call inline() on an element, all elements
+within it will be inlined. 
 
 ### Is there escape XML protection?
 

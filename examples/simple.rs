@@ -34,8 +34,8 @@ fn main() -> std::fmt::Result {
         };
 
         let b = if r % 20 != 0 {
-            build::single("circle")
-                .with(attrs!(("cx", 30.0), ("cy", 30.0), ("r", r)))
+            build::single("rect")
+                .with(attrs!(("width", 30.0), ("height", 30.0)))
                 .some()
         } else {
             None

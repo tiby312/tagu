@@ -62,6 +62,12 @@ pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closur
     Closure::new(func)
 }
 
+
+pub fn from_closure2<F:FnOnce()->E,E:Elem>(func:F)->Closure2<F>{
+    Closure2{func}
+}
+
+
 ///
 /// Create an element from an iterator of elements
 ///

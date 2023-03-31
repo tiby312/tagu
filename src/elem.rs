@@ -382,6 +382,21 @@ impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> ClosureEscapable<I> {
     }
 }
 
+
+pub struct Closure2<I>{
+    pub func:I
+}
+
+impl<I: FnOnce() -> E,E:Elem> Locked for Closure2<I> {}
+
+impl<I: FnOnce() -> E,E:Elem> Elem for Closure2<I> {
+    type Tail = E::Tail;
+    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let e=(self.func)();
+        e.render_head(w)
+    }
+}
+
 ///
 /// A closure elem
 ///
