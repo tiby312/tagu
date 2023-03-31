@@ -86,6 +86,8 @@ fn main() -> std::fmt::Result {
 		<rect x="5" y="5" width="90" height="90"/>
 	</g>
 </svg>```
+
+
 ### Output Image:
 
 <img src="./assets/svg_example.svg" alt="demo">
