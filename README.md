@@ -109,6 +109,8 @@ User can bypass this using the `raw_escpapable()` or `from_closure_escapable()` 
 `render()` requires that the chained together element implements `Locked`. If the user chains in a raw element, the whole
 chain will not implement `Locked`. Instead the user would have to use `render_escapable()`. The element chaining system works by having each element implement a `render_head()`, and a `render_tail()` function.
 
+If you want to implement your own custom `Elem` outside of this crate, you can safefully implement `Locked`. This crate does not expose an api that allows you to make an `Elem` that isnt locked. 
+
 
 ### What happened to the tagger crate?
 
