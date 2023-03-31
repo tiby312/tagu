@@ -230,8 +230,8 @@ pub trait Elem {
     }
 
     ///
-    /// When using pretty print rendering, force this element and descendants to be written out
-    /// inline. When using noFmt, this has no effect.
+    /// Force this element and descendants to be written out
+    /// inline.
     ///
     fn inline(self) -> Inliner<Self>
     where
