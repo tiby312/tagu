@@ -446,6 +446,9 @@ impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     }
 }
 
+
+#[must_use]
+#[derive(Copy,Clone)]
 pub struct Raw<D> {
     data: D,
 }
@@ -615,6 +618,9 @@ impl<D: ElemTail> ElemTail for InlinerTail<D> {
         Ok(())
     }
 }
+
+#[derive(Copy,Clone)]
+#[must_use]
 pub struct Inliner<E> {
     elem: E,
 }
@@ -691,6 +697,7 @@ impl<D: fmt::Display> Element<D, ()> {
 ///
 /// Notice that RenderElem is only implemented for a &BufferedElem.
 ///
+#[derive(Clone)]
 pub struct BufferedElem {
     head: String,
     tail: String,
