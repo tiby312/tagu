@@ -68,9 +68,7 @@ fn main() -> std::fmt::Result {
 }
 ```
 
-### Output
-
-### Text:
+### Output Text:
 ```html
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 	<style> .test{fill:none;stroke:white;stroke-width:3}</style>
@@ -88,7 +86,7 @@ fn main() -> std::fmt::Result {
 		<rect x="5" y="5" width="90" height="90"/>
 	</g>
 </svg>```
-#### Image:
+### Output Image:
 
 <img src="./assets/svg_example.svg" alt="demo">
 
