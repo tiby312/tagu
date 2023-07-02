@@ -38,7 +38,7 @@ fn stack_example<T>(stack: ElemStack<T>) -> Result<ElemStack<T>, std::fmt::Error
 }
 
 fn main() -> std::fmt::Result {
-    let all = build::render_stack(|mut w| {
+    let all = build::from_stack(|mut w| {
         w.put(adaptor_example())?;
 
         let mut w = stack_example(w)?;
