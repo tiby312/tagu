@@ -47,10 +47,7 @@ impl<W: fmt::Write, F: render::Fmt, T> MyWrite<W, F, T> {
         let tail = elem.render_head(ee)?;
         tail.render(ee)
     }
-    pub fn push<E: Elem>(
-        mut self,
-        elem: E,
-    ) -> Result<MyWrite<W, F, Doop<E::Tail, T>>, fmt::Error> {
+    pub fn push<E: Elem>(mut self, elem: E) -> Result<MyWrite<W, F, Doop<E::Tail, T>>, fmt::Error> {
         let tail = elem.render_head(&mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt))?;
 
         Ok(MyWrite {
