@@ -2,7 +2,6 @@
 //! Functionality to change rendering pretty print vs none.
 //!
 
-use std::borrow::BorrowMut;
 
 use super::*;
 pub struct Renderer<D: Fmt> {

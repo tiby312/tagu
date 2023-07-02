@@ -2,7 +2,6 @@
 //! Elem trait and building blocks
 //!
 
-use std::borrow::Borrow;
 
 use super::*;
 

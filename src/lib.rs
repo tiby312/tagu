@@ -12,7 +12,6 @@ use attr::*;
 pub mod render;
 
 use elem::*;
-use render::PrettyFmt;
 use tools::WriteWrap;
 
 pub mod prelude {
