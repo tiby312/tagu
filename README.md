@@ -166,7 +166,10 @@ See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/as
 You can append elements via building of long adaptor chains, or you can render
 elements to a writer on the fly. With chaining,
 you don't have to worry about handling errors because nothing actually gets written out
-as you're chaining. 
+as you're chaining. However, you do tend to have to build things 'upside down'. You have to build
+the elements thats are the most nested first, and then you can append that to bigger and bigger elements.
+With rendering on the fly, yeah you have to handle errors, but the order in which elements are handled
+matches how they are rendered.
 You can mix and match because you can make elements from closures and then chain those elements together.
 
 ### Inline function
