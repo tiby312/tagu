@@ -23,7 +23,7 @@ fn main() -> std::fmt::Result {
 ```
 
 ### Output Text:
-```
+```html
 <a1>
     <b1>
         <c1>
