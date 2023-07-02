@@ -45,8 +45,8 @@ pub struct Popper<E, O> {
     last: O,
 }
 
-pub struct MyWrite<'a, T> {
-    writer: ElemWrite<'a>,
+pub struct MyWrite<'a, 'b, T> {
+    writer: &'b mut ElemWrite<'a>,
     inner: T,
 }
 
@@ -79,7 +79,7 @@ pub struct MyWrite<'a, T> {
 //     }
 // }
 
-impl<'a, T> MyWrite<'a, T> {
+impl<'a, 'b, T> MyWrite<'a, 'b, T> {
     // pub fn eithera<B>(self) -> MyWrite<'a, EitherA<T, B>> {
     //     MyWrite{writer:self.writer,inner:EitherA::A(self.inner)}
     // }
@@ -90,7 +90,10 @@ impl<'a, T> MyWrite<'a, T> {
         let tail = elem.render_head(&mut self.writer)?;
         tail.render(&mut self.writer)
     }
-    pub fn push<E: Elem>(mut self, elem: E) -> Result<MyWrite<'a, Popper<E::Tail, T>>, fmt::Error> {
+    pub fn push<E: Elem>(
+        mut self,
+        elem: E,
+    ) -> Result<MyWrite<'a, 'b, Popper<E::Tail, T>>, fmt::Error> {
         let tail = elem.render_head(&mut self.writer)?;
 
         Ok(MyWrite {
@@ -103,8 +106,8 @@ impl<'a, T> MyWrite<'a, T> {
     }
 }
 
-impl<'a, P: Pop> MyWrite<'a, P> {
-    pub fn pop(mut self) -> Result<MyWrite<'a, P::Last>, fmt::Error> {
+impl<'a, 'b, P: Pop> MyWrite<'a, 'b, P> {
+    pub fn pop(mut self) -> Result<MyWrite<'a, 'b, P::Last>, fmt::Error> {
         let (e, l) = self.inner.next();
         e.render(&mut self.writer)?;
 
@@ -119,52 +122,63 @@ pub struct Sess<F> {
     func: F,
 }
 
-// impl<F> Elem for Sess<F> where F:FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error> {
-//     type Tail = ();
-//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-//         (self.func)(w)?;
-//         Ok(())
-//     }
-// }
+impl<F> Locked for Sess<F> {}
 
-pub fn sess<F>(func: F) -> Sess<F>
+impl<F> Elem for Sess<F>
 where
-    F: FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
+    for<'a, 'b> F:
+        FnOnce(MyWrite<'a, 'b, Sentinel>) -> Result<MyWrite<'a, 'b, Sentinel>, fmt::Error>,
 {
-    Sess { func }
-}
-
-pub fn session<W: fmt::Write>(writer: W) -> SessionStarter<W, PrettyFmt> {
-    SessionStarter::new(writer)
-}
-
-pub struct SessionStarter<W, F> {
-    writer: W,
-    fmt: F,
-}
-impl<W: fmt::Write> SessionStarter<W, PrettyFmt> {
-    pub fn new(writer: W) -> Self {
-        SessionStarter {
-            writer,
-            fmt: PrettyFmt::new(),
-        }
-    }
-}
-impl<W: fmt::Write, F: render::Fmt> SessionStarter<W, F> {
-    pub fn build(
-        &mut self,
-        func: impl FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
-    ) -> fmt::Result {
-        let writer = ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt);
-
+    type Tail = ();
+    fn render_head(self, writer: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let k = MyWrite {
             writer,
             inner: Sentinel { _p: () },
         };
-        let _ = func(k)?;
+        let _ = (self.func)(k)?;
         Ok(())
     }
 }
+
+pub fn sess<F>(func: F) -> Sess<F>
+where
+    for<'a, 'b> F:
+        FnOnce(MyWrite<'a, 'b, Sentinel>) -> Result<MyWrite<'a, 'b, Sentinel>, fmt::Error>,
+{
+    Sess { func }
+}
+
+// pub fn session<W: fmt::Write>(writer: W) -> SessionStarter<W, PrettyFmt> {
+//     SessionStarter::new(writer)
+// }
+
+// pub struct SessionStarter<W, F> {
+//     writer: W,
+//     fmt: F,
+// }
+// impl<W: fmt::Write> SessionStarter<W, PrettyFmt> {
+//     pub fn new(writer: W) -> Self {
+//         SessionStarter {
+//             writer,
+//             fmt: PrettyFmt::new(),
+//         }
+//     }
+// }
+// impl<W: fmt::Write, F: render::Fmt> SessionStarter<W, F> {
+//     pub fn build(
+//         &mut self,
+//         func: impl for<'a,'b> FnOnce(MyWrite<'a,'b,Sentinel>) -> Result<MyWrite<'a,'b,Sentinel>, fmt::Error>,
+//     ) -> fmt::Result {
+//         let writer = &mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt);
+
+//         let k = MyWrite {
+//             writer,
+//             inner: Sentinel { _p: () },
+//         };
+//         let _ = func(k)?;
+//         Ok(())
+//     }
+// }
 
 ///
 /// Render elements to a writer
