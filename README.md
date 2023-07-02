@@ -78,6 +78,82 @@ fn main() -> std::fmt::Result {
 </a2>
  ```
 
+### SVG Example
+
+```rust
+use hypermelon::build;
+use hypermelon::prelude::*;
+
+fn main() -> std::fmt::Result {
+    let width = 100.0;
+    let height = 100.0;
+
+    let rect = build::single("rect").with(attrs!(
+        ("x1", 0),
+        ("y1", 0),
+        ("rx", 20),
+        ("ry", 20),
+        ("width", width),
+        ("height", height),
+        ("style", "fill:blue")
+    ));
+
+    let style = build::elem("style")
+        .inline()
+        .append(".test{fill:none;stroke:white;stroke-width:3}");
+
+    let svg = build::elem("svg").with(attrs!(
+        ("xmlns", "http://www.w3.org/2000/svg"),
+        ("viewBox", format_move!("0 0 {} {}", width, height))
+    ));
+
+    let rows = build::from_stack(|mut f| {
+        for r in (0..50).step_by(5) {
+            if r % 10 == 0 {
+                let c = build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)));
+                f.put(c)?;
+            } else {
+                let r = build::single("rect").with(attrs!(
+                    ("x", 50 - r),
+                    ("y", 50 - r),
+                    ("width", r * 2),
+                    ("height", r * 2)
+                ));
+                f.put(r)?;
+            }
+        }
+        Ok(f)
+    });
+
+    let table = build::elem("g").with(("class", "test")).append(rows);
+
+    let all = svg.append(style).append(rect).append(table);
+
+    hypermelon::render(all, hypermelon::stdout_fmt())
+}
+
+```
+
+### Output
+
+```html
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <style> .test{fill:none;stroke:white;stroke-width:3}</style>
+    <rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
+    <g class="test">
+        <circle cx="50" cy="50" r="0"/>
+        <rect x="45" y="45" width="10" height="10"/>
+        <circle cx="50" cy="50" r="10"/>
+        <rect x="35" y="35" width="30" height="30"/>
+        <circle cx="50" cy="50" r="20"/>
+        <rect x="25" y="25" width="50" height="50"/>
+        <circle cx="50" cy="50" r="30"/>
+        <rect x="15" y="15" width="70" height="70"/>
+        <circle cx="50" cy="50" r="40"/>
+        <rect x="5" y="5" width="90" height="90"/>
+    </g>
+</svg>
+```
 
 
 
