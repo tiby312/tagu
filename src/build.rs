@@ -70,14 +70,14 @@ pub fn from_closure2<F: FnOnce() -> E, E: Elem>(func: F) -> Closure2<F> {
 }
 
 use crate::stack::*;
-pub fn render_stack<F>(func: F) -> Sess<F>
+pub fn from_stack<F>(func: F) -> Sess<F>
 where
     F: FnOnce(ElemStack<Sentinel>) -> Result<ElemStack<Sentinel>, fmt::Error>,
 {
     Sess::new(func)
 }
 
-pub fn render_stack_escpable<F>(func: F) -> SessEscapable<F>
+pub fn from_stack_escpable<F>(func: F) -> SessEscapable<F>
 where
     F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
 {

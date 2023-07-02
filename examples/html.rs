@@ -22,7 +22,7 @@ animation: mymove 5s infinite;
         let table = build::elem("table").with(("style", format_move!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
-            build::render_stack(move |mut w| {
+            build::from_stack(move |mut w| {
                 if i % 2 == 0 {
                     let columns = elems!(
                         build::elem("th")

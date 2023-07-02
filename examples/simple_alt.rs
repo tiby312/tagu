@@ -5,7 +5,7 @@ fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let all = build::render_stack(|w| {
+    let all = build::from_stack(|w| {
         let mut w = w.push(build::elem("svg").with(attrs!(
             ("xmlns", "http://www.w3.org/2000/svg"),
             ("viewBox", format_move!("0 0 {} {}", width, height))
