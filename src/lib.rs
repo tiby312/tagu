@@ -11,12 +11,9 @@ pub mod elem;
 use attr::*;
 pub mod render;
 
-use build::elem;
 use elem::*;
-use render::PrettyFmt;
 use tools::WriteWrap;
 
-use crate::build::single;
 
 pub mod prelude {
     //! The hypermelon prelude
@@ -74,18 +71,6 @@ impl<W: fmt::Write, F: render::Fmt, E: ElemTail, T> MyWrite<W, F, Doop<E, T>> {
     }
 }
 
-#[test]
-fn testo() {
-    let mut s = String::new();
-    session(&mut s, PrettyFmt::new(), |o| {
-        let mut k = o.push(elem("svg"))?.push(elem("foo"))?;
-        k.put(single("ya"))?;
-        k.pop()?.pop()
-    })
-    .unwrap();
-    println!("{}", s);
-    panic!();
-}
 
 pub fn session<F: render::Fmt, W: fmt::Write>(
     writer: W,
