@@ -11,8 +11,12 @@ pub mod elem;
 use attr::*;
 pub mod render;
 
+use build::elem;
 use elem::*;
+use render::PrettyFmt;
 use tools::WriteWrap;
+
+use crate::build::single;
 
 pub mod prelude {
     //! The hypermelon prelude
@@ -20,6 +24,84 @@ pub mod prelude {
     pub use super::elem::Elem;
     pub use super::elems;
     pub use super::format_move;
+}
+
+pub struct Sentinel {
+    _p: (),
+}
+
+pub struct Doop<E, O> {
+    elem: E,
+    last: O,
+}
+
+pub struct MyWrite<W, F, T> {
+    writer: W,
+    fmt: F,
+    inner: T,
+}
+
+impl<W: fmt::Write, F: render::Fmt, T> MyWrite<W, F, T> {
+    pub fn put<E: Elem>(&mut self, elem: E) -> fmt::Result {
+        let ee = &mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt);
+        let tail = elem.render_head(ee)?;
+        tail.render(ee)
+    }
+    pub fn push<E: Elem>(
+        mut self,
+        elem: E,
+    ) -> Result<MyWrite<W, F, Doop<E::Tail, T>>, fmt::Error> {
+        let tail = elem.render_head(&mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt))?;
+
+        Ok(MyWrite {
+            writer: self.writer,
+            fmt: self.fmt,
+            inner: Doop {
+                elem: tail,
+                last: self.inner,
+            },
+        })
+    }
+}
+impl<W: fmt::Write, F: render::Fmt, E: ElemTail, T> MyWrite<W, F, Doop<E, T>> {
+    pub fn pop(mut self) -> Result<MyWrite<W, F, T>, fmt::Error> {
+        self.inner
+            .elem
+            .render(&mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt))?;
+
+        Ok(MyWrite {
+            writer: self.writer,
+            fmt: self.fmt,
+            inner: self.inner.last,
+        })
+    }
+}
+
+#[test]
+fn testo() {
+    let mut s = String::new();
+    session(&mut s, PrettyFmt::new(), |o| {
+        let mut k = o.push(elem("svg"))?.push(elem("foo"))?;
+        k.put(single("ya"))?;
+        k.pop()?.pop()
+    })
+    .unwrap();
+    println!("{}", s);
+    panic!();
+}
+
+pub fn session<F: render::Fmt, W: fmt::Write>(
+    writer: W,
+    fmt: F,
+    func: impl FnOnce(MyWrite<W, F, Sentinel>) -> Result<MyWrite<W, F, Sentinel>, fmt::Error>,
+) -> fmt::Result {
+    let k = MyWrite {
+        writer,
+        fmt,
+        inner: Sentinel { _p: () },
+    };
+    let _ = func(k)?;
+    Ok(())
 }
 
 ///
