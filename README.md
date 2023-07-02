@@ -4,47 +4,58 @@ You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [
 Documentation at [docs.rs](https://docs.rs/hypermelon)
 
 
-## Example
+### Adaptor Example:
 
 ```rust
 use hypermelon::build;
-use hypermelon::elem::Locked;
 use hypermelon::prelude::*;
-use hypermelon::stack::ElemStack;
 
-
-// Elements are chained together to be rendered later.
-fn adaptor_example() -> impl Elem + Locked {
+fn main() -> std::fmt::Result {
     let a = build::elem("a1");
     let b = build::elem("b1");
     let c = build::elem("c1");
     let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
-    a.append(b.append(c.append(it)))
+    let all = a.append(b.append(c.append(it)));
+
+    hypermelon::render(all, hypermelon::stdout_fmt())
 }
 
-// Elements are rendered on the fly requiring error handling.
-fn stack_example<T>(stack: ElemStack<T>) -> Result<ElemStack<T>, std::fmt::Error> {
-    let a = build::elem("a2");
-    let b = build::elem("b2");
-    let c = build::elem("c2");
+```
 
-    let mut stack = stack.push(a)?.push(b)?.push(c)?;
+### Output Text:
+```
+<a1>
+    <b1>
+        <c1>
+            <x1:0></x1:0>
+            <x1:1></x1:1>
+            <x1:2></x1:2>
+            <x1:3></x1:3>
+            <x1:4></x1:4>
+        </c1>
+    </b1>
+</a1>
+```
 
-    for i in 0..5 {
-        let e = build::elem(format_move!("x2:{}", i)).inline();
-        stack.put(e)?;
-    }
-    stack.pop()?.pop()?.pop()
-}
+## Stack Example
+
+```rust
+use hypermelon::build;
+use hypermelon::prelude::*;
 
 fn main() -> std::fmt::Result {
-    let all = build::from_stack(|mut w| {
-        w.put(adaptor_example())?;
+    let all = build::from_stack(|stack| {
+        let a = build::elem("a2");
+        let b = build::elem("b2");
+        let c = build::elem("c2");
 
-        let mut w = stack_example(w)?;
+        let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
-        w.put(build::raw("Here can't escape html: <foo>"))?;
-        Ok(w)
+        for i in 0..5 {
+            let e = build::elem(format_move!("x2:{}", i)).inline();
+            stack.put(e)?;
+        }
+        stack.pop()?.pop()?.pop()
     });
 
     hypermelon::render(all, hypermelon::stdout_fmt())
@@ -54,30 +65,21 @@ fn main() -> std::fmt::Result {
 
 ### Output Text:
 ```html
-<a1>
-        <b1>
-                <c1>
-                        <x1:0></x1:0>
-                        <x1:1></x1:1>
-                        <x1:2></x1:2>
-                        <x1:3></x1:3>
-                        <x1:4></x1:4>
-                </c1>
-        </b1>
-</a1>
 <a2>
-        <b2>
-                <c2>
-                        <x2:0></x2:0>
-                        <x2:1></x2:1>
-                        <x2:2></x2:2>
-                        <x2:3></x2:3>
-                        <x2:4></x2:4>
-                </c2>
-        </b2>
+    <b2>
+        <c2>
+            <x2:0></x2:0>
+            <x2:1></x2:1>
+            <x2:2></x2:2>
+            <x2:3></x2:3>
+            <x2:4></x2:4>
+        </c2>
+    </b2>
 </a2>
- Here can&apos;t escape html: &lt;foo&gt;
  ```
+
+
+
 
 See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
 

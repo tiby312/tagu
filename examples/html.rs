@@ -1,5 +1,6 @@
 use hypermelon::build;
 use hypermelon::prelude::*;
+
 fn main() -> std::fmt::Result {
     let html = build::single("DOCTYPE html")
         .with_start("!")

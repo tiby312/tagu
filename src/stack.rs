@@ -33,6 +33,10 @@ impl<'a, T> ElemStack<'a, T> {
     ) -> Result<ElemStack<'a, Popper<E::Tail, T>>, fmt::Error> {
         self.0.push(elem).map(|a| ElemStack(a))
     }
+
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+        self.0.writer.writer()
+    }
 }
 
 impl<'a, P: Pop> ElemStack<'a, P> {
@@ -66,6 +70,10 @@ impl<'a, T> ElemStackEscapable<'a, T> {
             },
         }
     }
+
+    // pub fn writer_escapable(&mut self)->WriteWrap{
+    //     self.writer.as_escapable().writer_escapable()
+    // }
 }
 
 impl<'a, P: Pop> ElemStackEscapable<'a, P> {
@@ -132,6 +140,27 @@ where
             inner: Sentinel { _p: () },
         };
         let _ = (self.func)(k)?;
+        Ok(())
+    }
+}
+
+///
+/// If you dont want to use a closure, you can implement this trait
+///
+pub trait ElemOuter {
+    fn render<'a>(self, w: ElemStack<'a, Sentinel>) -> Result<ElemStack<'a, Sentinel>, fmt::Error>;
+}
+impl<E: ElemOuter> Locked for E {}
+impl<E: ElemOuter> Elem for E {
+    type Tail = ();
+
+    fn render_head(self, writer: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let k = ElemStack(ElemStackEscapable {
+            writer,
+            inner: Sentinel { _p: () },
+        });
+
+        let _ = self.render(k)?;
         Ok(())
     }
 }
