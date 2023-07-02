@@ -21,24 +21,44 @@ pub struct Popper<E, O> {
     last: O,
 }
 
-pub struct ElemStack<'a, T> {
+pub struct ElemStack<'a, T>(ElemStackEscapable<'a, T>);
+
+impl<'a, T> ElemStack<'a, T> {
+    pub fn put<E: Elem + Locked>(&mut self, elem: E) -> fmt::Result {
+        self.0.put(elem)
+    }
+    pub fn push<E: Elem + Locked>(
+        self,
+        elem: E,
+    ) -> Result<ElemStack<'a, Popper<E::Tail, T>>, fmt::Error> {
+        self.0.push(elem).map(|a| ElemStack(a))
+    }
+}
+
+impl<'a, P: Pop> ElemStack<'a, P> {
+    pub fn pop(self) -> Result<ElemStack<'a, P::Last>, fmt::Error> {
+        self.0.pop().map(|a| ElemStack(a))
+    }
+}
+
+pub struct ElemStackEscapable<'a, T> {
     writer: ElemWrite<'a>,
     inner: T,
 }
 
-impl<'a, T> ElemStack<'a, T> {
-    pub fn put<E: Elem+Locked>(&mut self, elem: E) -> fmt::Result {
+impl<'a, T> ElemStackEscapable<'a, T> {
+    pub fn put<E: Elem>(&mut self, elem: E) -> fmt::Result {
         self.writer.render_inner(elem)
     }
-    pub fn push<E: Elem+Locked>(
+    pub fn push<E: Elem>(
         mut self,
         elem: E,
-    ) -> Result<ElemStack<'a, Popper<E::Tail, T>>, fmt::Error> {
+    ) -> Result<ElemStackEscapable<'a, Popper<E::Tail, T>>, fmt::Error> {
         let tail = elem.render_head(self.writer.borrow_mut2())?;
         Ok(self.push_tail(tail))
     }
-    fn push_tail<O>(self,tail:O)->ElemStack<'a,Popper<O,T>>{
-        ElemStack {
+    fn push_tail<O>(self, tail: O) -> ElemStackEscapable<'a, Popper<O, T>> {
+        ElemStackEscapable {
             writer: self.writer,
             inner: Popper {
                 elem: tail,
@@ -48,12 +68,12 @@ impl<'a, T> ElemStack<'a, T> {
     }
 }
 
-impl<'a, P: Pop> ElemStack<'a, P> {
-    pub fn pop(mut self) -> Result<ElemStack<'a, P::Last>, fmt::Error> {
+impl<'a, P: Pop> ElemStackEscapable<'a, P> {
+    pub fn pop(mut self) -> Result<ElemStackEscapable<'a, P::Last>, fmt::Error> {
         let (e, l) = self.inner.next();
         e.render(self.writer.borrow_mut2())?;
 
-        Ok(ElemStack {
+        Ok(ElemStackEscapable {
             writer: self.writer,
             inner: l,
         })
@@ -80,7 +100,34 @@ where
 {
     type Tail = ();
     fn render_head(self, writer: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let k = ElemStack {
+        let k = ElemStack(ElemStackEscapable {
+            writer,
+            inner: Sentinel { _p: () },
+        });
+        let _ = (self.func)(k)?;
+        Ok(())
+    }
+}
+
+pub struct SessEscapable<F> {
+    func: F,
+}
+impl<F> SessEscapable<F>
+where
+    F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
+{
+    pub fn new(func: F) -> Self {
+        Self { func }
+    }
+}
+
+impl<F> Elem for SessEscapable<F>
+where
+    F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
+{
+    type Tail = ();
+    fn render_head(self, writer: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let k = ElemStackEscapable {
             writer,
             inner: Sentinel { _p: () },
         };

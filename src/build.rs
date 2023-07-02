@@ -77,6 +77,13 @@ where
     Sess::new(func)
 }
 
+pub fn render_stack_escpable<F>(func: F) -> SessEscapable<F>
+where
+    F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
+{
+    SessEscapable::new(func)
+}
+
 ///
 /// Create an element from an iterator of elements
 ///

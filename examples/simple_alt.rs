@@ -1,13 +1,7 @@
 use hypermelon::build;
+use hypermelon::elem::Locked;
 use hypermelon::prelude::*;
 use hypermelon::stack::ElemStack;
-
-fn test<T>(a: ElemStack<T>) -> Result<ElemStack<T>, std::fmt::Error> {
-    let a = a.push(build::elem("svg"))?;
-    let a = a.push(build::elem("svg"))?;
-    let a = a.push(build::elem("svg"))?;
-    a.pop()?.pop()?.pop()
-}
 
 fn main() -> std::fmt::Result {
     let width = 100.0;
@@ -24,10 +18,6 @@ fn main() -> std::fmt::Result {
                 .append(".test{fill:none;stroke:white;stroke-width:3}")
                 .inline(),
         )?;
-
-        let mut w = test(w)?;
-
-        w.put(build::raw_escapable("hay"))?;
 
         w.put(build::single("rect").with(attrs!(
             ("x1", 0),

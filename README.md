@@ -8,54 +8,44 @@ Documentation at [docs.rs](https://docs.rs/hypermelon)
 
 ```rust
 use hypermelon::build;
+use hypermelon::elem::Locked;
 use hypermelon::prelude::*;
+use hypermelon::stack::ElemStack;
+
+
+// Elements are chained together to be rendered later.
+fn adaptor_example() -> impl Elem + Locked {
+    let a = build::elem("a1");
+    let b = build::elem("b1");
+    let c = build::elem("c1");
+    let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
+    a.append(b.append(c.append(it)))
+}
+
+// Elements are rendered on the fly requiring error handling.
+fn stack_example<T>(stack: ElemStack<T>) -> Result<ElemStack<T>, std::fmt::Error> {
+    let a = build::elem("a2");
+    let b = build::elem("b2");
+    let c = build::elem("c2");
+
+    let mut stack = stack.push(a)?.push(b)?.push(c)?;
+
+    for i in 0..5 {
+        let e = build::elem(format_move!("x2:{}", i)).inline();
+        stack.put(e)?;
+    }
+    stack.pop()?.pop()?.pop()
+}
 
 fn main() -> std::fmt::Result {
-    let width = 100.0;
-    let height = 100.0;
+    let all = build::render_stack(|mut w| {
+        w.put(adaptor_example())?;
 
-    let rect = build::single("rect").with(attrs!(
-        ("x1", 0),
-        ("y1", 0),
-        ("rx", 20),
-        ("ry", 20),
-        ("width", width),
-        ("height", height),
-        ("style", "fill:blue")
-    ));
+        let mut w = stack_example(w)?;
 
-    let style = build::elem("style")
-        .inline()
-        .append(".test{fill:none;stroke:white;stroke-width:3}");
-
-    let svg = build::elem("svg").with(attrs!(
-        ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", format_move!("0 0 {} {}", width, height))
-    ));
-
-    let rows = (0..50).step_by(5).map(|r| {
-        let o = r % 10 == 0;
-
-        let a =
-            o.then(|| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
-
-        let b = (!o).then(|| {
-            build::single("rect").with(attrs!(
-                ("x", 50 - r),
-                ("y", 50 - r),
-                ("width", r * 2),
-                ("height", r * 2)
-            ))
-        });
-
-        a.chain(b)
+        w.put(build::raw("Here can't escape html: <foo>"))?;
+        Ok(w)
     });
-
-    let table = build::elem("g")
-        .with(("class", "test"))
-        .append(build::from_iter(rows));
-
-    let all = svg.append(style).append(rect).append(table);
 
     hypermelon::render(all, hypermelon::stdout_fmt())
 }
@@ -64,29 +54,30 @@ fn main() -> std::fmt::Result {
 
 ### Output Text:
 ```html
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-	<style> .test{fill:none;stroke:white;stroke-width:3}</style>
-	<rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
-	<g class="test">
-		<circle cx="50" cy="50" r="0"/>
-		<rect x="45" y="45" width="10" height="10"/>
-		<circle cx="50" cy="50" r="10"/>
-		<rect x="35" y="35" width="30" height="30"/>
-		<circle cx="50" cy="50" r="20"/>
-		<rect x="25" y="25" width="50" height="50"/>
-		<circle cx="50" cy="50" r="30"/>
-		<rect x="15" y="15" width="70" height="70"/>
-		<circle cx="50" cy="50" r="40"/>
-		<rect x="5" y="5" width="90" height="90"/>
-	</g>
-</svg>
-```
-
-
-### Output Image:
-
-<img src="./assets/svg_example.svg" alt="demo">
-
+<a1>
+        <b1>
+                <c1>
+                        <x1:0></x1:0>
+                        <x1:1></x1:1>
+                        <x1:2></x1:2>
+                        <x1:3></x1:3>
+                        <x1:4></x1:4>
+                </c1>
+        </b1>
+</a1>
+<a2>
+        <b2>
+                <c2>
+                        <x2:0></x2:0>
+                        <x2:1></x2:1>
+                        <x2:2></x2:2>
+                        <x2:3></x2:3>
+                        <x2:4></x2:4>
+                </c2>
+        </b2>
+</a2>
+ Here can&apos;t escape html: &lt;foo&gt;
+ ```
 
 See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
 

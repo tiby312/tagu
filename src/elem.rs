@@ -125,7 +125,7 @@ impl<'a> ElemWrite<'a> {
         self.1.end_tag(&mut self.0)
     }
 
-    fn as_escapable(&mut self) -> ElemWriteEscapable {
+    pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable {
         ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
     }
     fn writer_escapable(&mut self) -> WriteWrap {
