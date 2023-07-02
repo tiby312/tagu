@@ -2,6 +2,8 @@
 //! Functionality to change rendering pretty print vs none.
 //!
 
+use std::borrow::BorrowMut;
+
 use super::*;
 pub struct Renderer<D: Fmt> {
     fmt: D,
@@ -36,8 +38,8 @@ impl<D: Fmt> Renderer<D> {
         elem: E,
         mut writer: W,
     ) -> fmt::Result {
-        let e = &mut ElemWrite(WriteWrap(&mut writer), &mut self.fmt);
-        let tail = elem.render_head(e)?;
+        let mut e = ElemWrite(WriteWrap(&mut writer), &mut self.fmt);
+        let tail = elem.render_head(e.borrow_mut2())?;
         tail.render(e)
     }
 }

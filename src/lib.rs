@@ -45,8 +45,8 @@ pub struct Popper<E, O> {
     last: O,
 }
 
-pub struct MyWrite<'a, 'b, T> {
-    writer: &'b mut ElemWrite<'a>,
+pub struct MyWrite<'a, T> {
+    writer: ElemWrite<'a>,
     inner: T,
 }
 
@@ -79,7 +79,7 @@ pub struct MyWrite<'a, 'b, T> {
 //     }
 // }
 
-impl<'a, 'b, T> MyWrite<'a, 'b, T> {
+impl<'a, T> MyWrite<'a, T> {
     // pub fn eithera<B>(self) -> MyWrite<'a, EitherA<T, B>> {
     //     MyWrite{writer:self.writer,inner:EitherA::A(self.inner)}
     // }
@@ -87,14 +87,11 @@ impl<'a, 'b, T> MyWrite<'a, 'b, T> {
     //     MyWrite{writer:self.writer,inner:EitherA::B(self.inner)}
     // }
     pub fn put<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let tail = elem.render_head(&mut self.writer)?;
-        tail.render(&mut self.writer)
+        let tail = elem.render_head(self.writer.borrow_mut2())?;
+        tail.render(self.writer.borrow_mut2())
     }
-    pub fn push<E: Elem>(
-        mut self,
-        elem: E,
-    ) -> Result<MyWrite<'a, 'b, Popper<E::Tail, T>>, fmt::Error> {
-        let tail = elem.render_head(&mut self.writer)?;
+    pub fn push<E: Elem>(mut self, elem: E) -> Result<MyWrite<'a, Popper<E::Tail, T>>, fmt::Error> {
+        let tail = elem.render_head(self.writer.borrow_mut2())?;
 
         Ok(MyWrite {
             writer: self.writer,
@@ -106,10 +103,10 @@ impl<'a, 'b, T> MyWrite<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, P: Pop> MyWrite<'a, 'b, P> {
-    pub fn pop(mut self) -> Result<MyWrite<'a, 'b, P::Last>, fmt::Error> {
+impl<'a, P: Pop> MyWrite<'a, P> {
+    pub fn pop(mut self) -> Result<MyWrite<'a, P::Last>, fmt::Error> {
         let (e, l) = self.inner.next();
-        e.render(&mut self.writer)?;
+        e.render(self.writer.borrow_mut2())?;
 
         Ok(MyWrite {
             writer: self.writer,
@@ -126,11 +123,10 @@ impl<F> Locked for Sess<F> {}
 
 impl<F> Elem for Sess<F>
 where
-    for<'a, 'b> F:
-        FnOnce(MyWrite<'a, 'b, Sentinel>) -> Result<MyWrite<'a, 'b, Sentinel>, fmt::Error>,
+    F: FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
 {
     type Tail = ();
-    fn render_head(self, writer: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, writer: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let k = MyWrite {
             writer,
             inner: Sentinel { _p: () },
@@ -142,8 +138,7 @@ where
 
 pub fn sess<F>(func: F) -> Sess<F>
 where
-    for<'a, 'b> F:
-        FnOnce(MyWrite<'a, 'b, Sentinel>) -> Result<MyWrite<'a, 'b, Sentinel>, fmt::Error>,
+    F: FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
 {
     Sess { func }
 }

@@ -2,6 +2,8 @@
 //! Elem trait and building blocks
 //!
 
+use std::borrow::Borrow;
+
 use super::*;
 
 ///
@@ -10,6 +12,9 @@ use super::*;
 pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWriteEscapable<'a> {
+    pub fn borrow_mut2(&mut self) -> ElemWriteEscapable {
+        ElemWriteEscapable(self.0.borrow_mut(), self.1)
+    }
     pub fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
     }
@@ -18,8 +23,8 @@ impl<'a> ElemWriteEscapable<'a> {
     }
 
     pub fn render<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let tail = elem.render_head(&mut self.as_elem_write())?;
-        tail.render(&mut self.as_elem_write())
+        let tail = elem.render_head(self.as_elem_write())?;
+        tail.render(self.as_elem_write())
     }
     fn as_elem_write(&mut self) -> ElemWrite {
         ElemWrite(WriteWrap(self.0 .0), self.1)
@@ -27,20 +32,26 @@ impl<'a> ElemWriteEscapable<'a> {
 
     pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
-        let tail = elem.render_head(&mut self.as_elem_write())?;
-        tail.render(&mut self.as_elem_write())
+        let tail = elem.render_head(self.as_elem_write())?;
+        tail.render(self.as_elem_write())
     }
 
-    pub fn session<'b, E: Elem>(&'b mut self, elem: E) -> SessionEscapable<'b, 'a, E> {
-        SessionEscapable { elem, writer: self }
+    pub fn session<'b, E: Elem>(&'b mut self, elem: E) -> SessionEscapable<'b, E> {
+        SessionEscapable {
+            elem,
+            writer: self.borrow_mut2(),
+        }
     }
 
     pub fn session_map<'b, E: Elem, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
-    ) -> SessionEscapable<'b, 'a, E> {
+    ) -> SessionEscapable<'b, E> {
         let elem = func();
-        SessionEscapable { elem, writer: self }
+        SessionEscapable {
+            elem,
+            writer: self.borrow_mut2(),
+        }
     }
 }
 
@@ -51,6 +62,10 @@ impl<'a> ElemWriteEscapable<'a> {
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWrite<'a> {
+    pub fn borrow_mut2(&mut self) -> ElemWrite {
+        ElemWrite(self.0.borrow_mut(), self.1)
+    }
+
     pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
         tools::escape_guard(self.0.borrow_mut())
     }
@@ -60,20 +75,26 @@ impl<'a> ElemWrite<'a> {
 
     pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
-        let tail = elem.render_head(self)?;
-        tail.render(self)
+        let tail = elem.render_head(self.borrow_mut2())?;
+        tail.render(self.borrow_mut2())
     }
 
-    pub fn session<'b, E: Elem + Locked>(&'b mut self, elem: E) -> Session<'b, 'a, E> {
-        Session { elem, writer: self }
+    pub fn session<'b, E: Elem + Locked>(&'b mut self, elem: E) -> Session<'b, E> {
+        Session {
+            elem,
+            writer: self.borrow_mut2(),
+        }
     }
 
     pub fn session_map<'b, E: Elem + Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
-    ) -> Session<'b, 'a, E> {
+    ) -> Session<'b, E> {
         let elem = func();
-        Session { elem, writer: self }
+        Session {
+            elem,
+            writer: self.borrow_mut2(),
+        }
     }
 
     fn set_inline_mode(&mut self, val: bool) {
@@ -113,8 +134,8 @@ impl<'a> ElemWrite<'a> {
     // }
 
     fn render_inner<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let tail = elem.render_head(self)?;
-        tail.render(self)
+        let tail = elem.render_head(self.borrow_mut2())?;
+        tail.render(self.borrow_mut2())
     }
 }
 
@@ -122,8 +143,8 @@ impl<'a> ElemWrite<'a> {
 /// Alternative trait for Elem that is friendly to dyn trait.
 ///
 trait ElemDyn {
-    fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
-    fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error>;
+    fn render_head(&mut self, w: ElemWrite) -> Result<(), fmt::Error>;
+    fn render_tail(&mut self, w: ElemWrite) -> Result<(), fmt::Error>;
 }
 
 ///
@@ -133,7 +154,7 @@ pub struct DynamicElementTail<'a> {
     elem: Box<dyn ElemDyn + 'a>,
 }
 impl<'a> ElemTail for DynamicElementTail<'a> {
-    fn render(mut self, w: &mut ElemWrite) -> std::fmt::Result {
+    fn render(mut self, w: ElemWrite) -> std::fmt::Result {
         self.elem.render_tail(w)
     }
 }
@@ -165,12 +186,12 @@ impl<'a> DynamicElement<'a> {
             }
         }
         impl<E: Elem> ElemDyn for DynamicElem<E> {
-            fn render_head(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
+            fn render_head(&mut self, w: ElemWrite) -> Result<(), fmt::Error> {
                 let tail = self.head.take().unwrap().render_head(w)?;
                 self.tail = Some(tail);
                 Ok(())
             }
-            fn render_tail(&mut self, w: &mut ElemWrite) -> Result<(), fmt::Error> {
+            fn render_tail(&mut self, w: ElemWrite) -> Result<(), fmt::Error> {
                 self.tail.take().unwrap().render(w)
             }
         }
@@ -183,7 +204,7 @@ impl<'a> DynamicElement<'a> {
 
 impl<'a> Elem for DynamicElement<'a> {
     type Tail = DynamicElementTail<'a>;
-    fn render_head(mut self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(mut self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         self.elem.render_head(w)?;
         Ok(DynamicElementTail { elem: self.elem })
     }
@@ -194,18 +215,18 @@ impl<'a> Elem for DynamicElement<'a> {
 ///
 pub trait Elem {
     type Tail: ElemTail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error>;
+    fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
     fn render_closure<K>(
         self,
-        w: &mut ElemWrite,
-        func: impl FnOnce(&mut ElemWrite) -> Result<K, fmt::Error>,
+        mut w: ElemWrite,
+        func: impl FnOnce(ElemWrite) -> Result<K, fmt::Error>,
     ) -> Result<K, fmt::Error>
     where
         Self: Sized,
     {
-        let tail = self.render_head(w)?;
-        let res = func(w)?;
+        let tail = self.render_head(w.borrow_mut2())?;
+        let res = func(w.borrow_mut2())?;
         tail.render(w)?;
         Ok(res)
     }
@@ -267,9 +288,9 @@ impl<A: Locked, B: Locked> Locked for Append<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Append<A, B> {
     type Tail = A::Tail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
-        let tail = top.render_head(w)?;
+        let tail = top.render_head(w.borrow_mut2())?;
         w.render_inner(bottom)?;
         Ok(tail)
     }
@@ -278,7 +299,7 @@ impl<A: Elem, B: Elem> Elem for Append<A, B> {
 impl<A: Locked> Locked for Option<A> {}
 
 impl<A: ElemTail> ElemTail for Option<A> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+    fn render(self, w: ElemWrite) -> std::fmt::Result {
         if let Some(a) = self {
             a.render(w)?;
         }
@@ -287,7 +308,7 @@ impl<A: ElemTail> ElemTail for Option<A> {
 }
 impl<A: Elem> Elem for Option<A> {
     type Tail = Option<A::Tail>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         if let Some(a) = self {
             Ok(Some(a.render_head(w)?))
         } else {
@@ -309,7 +330,7 @@ impl<A: Locked, B: Locked> Locked for Chain<A, B> {}
 
 impl<A: Elem, B: Elem> Elem for Chain<A, B> {
     type Tail = B::Tail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Chain { top, bottom } = self;
         w.render_inner(top)?;
         bottom.render_head(w)
@@ -320,23 +341,23 @@ impl<A: Elem, B: Elem> Elem for Chain<A, B> {
 /// Tail to elem trait.
 ///
 pub trait ElemTail {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result;
+    fn render(self, w: ElemWrite) -> std::fmt::Result;
 }
 
 ///
 /// Used to start a closure session
 ///
 #[must_use]
-pub struct Session<'a, 'b, E> {
+pub struct Session<'b, E> {
     elem: E,
-    writer: &'a mut ElemWrite<'b>,
+    writer: ElemWrite<'b>,
 }
 
-impl<'a, 'b, E: Elem> Session<'a, 'b, E> {
+impl<'b, E: Elem> Session<'b, E> {
     pub fn build(self, func: impl FnOnce(&mut ElemWrite) -> fmt::Result) -> fmt::Result {
-        let Session { elem, writer } = self;
-        let tail = elem.render_head(writer)?;
-        func(writer)?;
+        let Session { elem, mut writer } = self;
+        let tail = elem.render_head(writer.borrow_mut2())?;
+        func(&mut writer)?;
         tail.render(writer)
     }
 }
@@ -345,23 +366,23 @@ impl<'a, 'b, E: Elem> Session<'a, 'b, E> {
 /// Used to start an escapable closure session
 ///
 #[must_use]
-pub struct SessionEscapable<'a, 'b, E> {
+pub struct SessionEscapable<'b, E> {
     elem: E,
-    writer: &'a mut ElemWriteEscapable<'b>,
+    writer: ElemWriteEscapable<'b>,
 }
 
-impl<'a, 'b, E: Elem> SessionEscapable<'a, 'b, E> {
+impl<'b, E: Elem> SessionEscapable<'b, E> {
     pub fn build(self, func: impl FnOnce(&mut ElemWriteEscapable) -> fmt::Result) -> fmt::Result {
-        let SessionEscapable { elem, writer } = self;
-        let tail = elem.render_head(&mut writer.as_elem_write())?;
-        func(writer)?;
-        tail.render(&mut writer.as_elem_write())
+        let SessionEscapable { elem, mut writer } = self;
+        let tail = elem.render_head(writer.as_elem_write())?;
+        func(&mut writer)?;
+        tail.render(writer.as_elem_write())
     }
 }
 
 impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> Elem for ClosureEscapable<I> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         (self.func)(&mut w.as_escapable())?;
         Ok(())
     }
@@ -390,7 +411,7 @@ impl<I: FnOnce() -> E, E: Elem> Locked for Closure2<I> {}
 
 impl<I: FnOnce() -> E, E: Elem> Elem for Closure2<I> {
     type Tail = E::Tail;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let e = (self.func)();
         e.render_head(w)
     }
@@ -415,8 +436,8 @@ impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Locked for Closure<I> {}
 
 impl<I: FnOnce(&mut ElemWrite) -> fmt::Result> Elem for Closure<I> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        (self.func)(w)?;
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        (self.func)(&mut w)?;
         Ok(())
     }
 }
@@ -438,7 +459,7 @@ impl<I: IntoIterator<Item = R>, R: Locked> Locked for Iter<I> {}
 
 impl<I: IntoIterator<Item = R>, R: Elem> Elem for Iter<I> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         for i in self.iter {
             w.render_inner(i)?;
         }
@@ -460,7 +481,7 @@ impl<D: fmt::Display> Raw<D> {
 impl<D: fmt::Display> Locked for Raw<D> {}
 impl<D: fmt::Display> Elem for Raw<D> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer(), " {}", self.data)?;
         w.end_tag()?;
@@ -471,7 +492,7 @@ impl<D: fmt::Display> Elem for Raw<D> {
 impl<'a> Locked for &'a str {}
 impl<'a> Elem for &'a str {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         Raw::new(self).render_head(w)
     }
 }
@@ -491,7 +512,7 @@ impl<D: fmt::Display> RawEscapable<D> {
 }
 impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
         write!(w.writer_escapable(), " {}", self.data)?;
         w.end_tag()?;
@@ -545,7 +566,7 @@ impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
 }
 impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single<D, A, K, Z> {
     type Tail = ();
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Single {
             tag,
             attr,
@@ -585,7 +606,7 @@ pub struct ElementTail<D> {
 }
 
 impl<D: fmt::Display> ElemTail for ElementTail<D> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
         w.pop();
 
         //w.end_tag()?;
@@ -606,8 +627,8 @@ pub struct InlinerTail<K: ElemTail> {
 }
 
 impl<D: ElemTail> ElemTail for InlinerTail<D> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
-        self.tail.render(w)?;
+    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
+        self.tail.render(w.borrow_mut2())?;
 
         if self.reset {
             w.set_inline_mode(false);
@@ -626,7 +647,7 @@ pub struct Inliner<E> {
 impl<E> Locked for Inliner<E> {}
 impl<E: Elem> Elem for Inliner<E> {
     type Tail = InlinerTail<E::Tail>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let reset = if w.is_inline_mode() {
             false
         } else {
@@ -666,7 +687,7 @@ impl<D: fmt::Display, A: Attr> Element<D, A> {
 }
 impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
     type Tail = ElementTail<D>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Element { tag, attr } = self;
         w.tabs()?;
         w.writer_escapable().write_char('<')?;
@@ -706,8 +727,8 @@ impl BufferedElem {
     pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
-        let t = elem.render_head(&mut ElemWrite(WriteWrap(&mut head), &mut fmt))?;
-        t.render(&mut ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
+        let t = elem.render_head(ElemWrite(WriteWrap(&mut head), &mut fmt))?;
+        t.render(ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
         head.shrink_to_fit();
         tail.shrink_to_fit();
         Ok(BufferedElem { head, tail })
@@ -725,7 +746,7 @@ pub struct BufferedTail<'a> {
     tail: &'a str,
 }
 impl<'a> ElemTail for BufferedTail<'a> {
-    fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
         write!(w.writer_escapable(), "{}", self.tail)
     }
 }
@@ -733,14 +754,14 @@ impl<'a> Locked for &'a BufferedElem {}
 
 impl<'a> Elem for &'a BufferedElem {
     type Tail = BufferedTail<'a>;
-    fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         write!(w.writer_escapable(), "{}", self.head)?;
         Ok(BufferedTail { tail: &self.tail })
     }
 }
 
 impl ElemTail for () {
-    fn render(self, _: &mut ElemWrite) -> std::fmt::Result {
+    fn render(self, _: ElemWrite) -> std::fmt::Result {
         Ok(())
     }
 }

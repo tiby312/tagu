@@ -2,6 +2,10 @@ use hypermelon::build;
 use hypermelon::prelude::*;
 use hypermelon::MyWrite;
 
+fn test<T>(a: MyWrite<T>) -> Result<MyWrite<T>, std::fmt::Error> {
+    Ok(a)
+}
+
 fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
