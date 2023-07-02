@@ -38,6 +38,7 @@ pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
 ///
 /// ```
 ///
+#[deprecated(note = "use hypermelon::session")]
 pub fn from_closure_escapable<F: FnOnce(&mut ElemWriteEscapable) -> fmt::Result>(
     func: F,
 ) -> ClosureEscapable<F> {
@@ -58,12 +59,29 @@ pub fn from_closure_escapable<F: FnOnce(&mut ElemWriteEscapable) -> fmt::Result>
 ///
 /// ```
 ///
+#[deprecated(note = "use hypermelon::session")]
 pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closure<F> {
     Closure::new(func)
 }
 
+#[deprecated(note = "use hypermelon::session")]
 pub fn from_closure2<F: FnOnce() -> E, E: Elem>(func: F) -> Closure2<F> {
     Closure2 { func }
+}
+
+use crate::stack::*;
+pub fn from_stack<F>(func: F) -> Sess<F>
+where
+    F: FnOnce(ElemStack<Sentinel>) -> Result<ElemStack<Sentinel>, fmt::Error>,
+{
+    Sess::new(func)
+}
+
+pub fn from_stack_escpable<F>(func: F) -> SessEscapable<F>
+where
+    F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
+{
+    SessEscapable::new(func)
 }
 
 ///
@@ -134,6 +152,7 @@ pub fn box_elem<'a, E: Elem + 'a>(elem: E) -> DynamicElement<'a> {
 /// hypermelon::render(k,&mut s).unwrap()
 ///
 /// ```
+#[deprecated]
 pub fn attr_from_closure<F: FnOnce(&mut AttrWrite) -> fmt::Result>(func: F) -> AttrClosure<F> {
     AttrClosure::new(func)
 }

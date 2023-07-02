@@ -6,7 +6,7 @@ use super::*;
 pub struct Renderer<D: Fmt> {
     fmt: D,
 }
-impl Renderer<PrettyFmt<'static>> {
+impl Renderer<PrettyFmt> {
     pub fn new() -> Self {
         Renderer {
             fmt: PrettyFmt::new(),
@@ -14,7 +14,7 @@ impl Renderer<PrettyFmt<'static>> {
     }
 }
 
-impl Default for Renderer<PrettyFmt<'static>> {
+impl Default for Renderer<PrettyFmt> {
     fn default() -> Self {
         Self::new()
     }
@@ -29,15 +29,15 @@ impl<D: Fmt> Renderer<D> {
         elem: E,
         mut writer: W,
     ) -> fmt::Result {
-        ElemWrite(WriteWrap(&mut writer), &mut self.fmt).render(elem)
+        ElemWrite(WriteWrap(&mut writer), &mut self.fmt).render_inner(elem)
     }
     pub fn render_escapable<E: Elem, W: fmt::Write>(
         &mut self,
         elem: E,
         mut writer: W,
     ) -> fmt::Result {
-        let e = &mut ElemWrite(WriteWrap(&mut writer), &mut self.fmt);
-        let tail = elem.render_head(e)?;
+        let mut e = ElemWrite(WriteWrap(&mut writer), &mut self.fmt);
+        let tail = elem.render_head(e.borrow_mut2())?;
         tail.render(e)
     }
 }
@@ -51,19 +51,19 @@ pub trait Fmt {
     fn is_inline_mode(&mut self) -> bool;
 }
 
-pub struct PrettyFmt<'a> {
+pub struct PrettyFmt {
     tabs: usize,
-    tab_char: &'a str,
+    tab_char: &'static str,
     inline: bool,
 }
 
-impl Default for PrettyFmt<'static> {
+impl Default for PrettyFmt {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl PrettyFmt<'static> {
+impl PrettyFmt {
     pub fn new() -> Self {
         PrettyFmt {
             tabs: 0,
@@ -72,8 +72,8 @@ impl PrettyFmt<'static> {
         }
     }
 }
-impl<'a> PrettyFmt<'a> {
-    pub fn with_tab(self, tab: &str) -> PrettyFmt {
+impl PrettyFmt {
+    pub fn with_tab(self, tab: &'static str) -> PrettyFmt {
         PrettyFmt {
             tabs: self.tabs,
             tab_char: tab,
@@ -82,7 +82,7 @@ impl<'a> PrettyFmt<'a> {
     }
 }
 
-impl Fmt for PrettyFmt<'_> {
+impl Fmt for PrettyFmt {
     fn set_inline_mode(&mut self, val: bool) {
         self.inline = val;
     }

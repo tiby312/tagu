@@ -4,7 +4,81 @@ You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [
 Documentation at [docs.rs](https://docs.rs/hypermelon)
 
 
-## Example
+### Adaptor Example:
+
+```rust
+use hypermelon::build;
+use hypermelon::prelude::*;
+
+fn main() -> std::fmt::Result {
+    let a = build::elem("a1");
+    let b = build::elem("b1");
+    let c = build::elem("c1");
+    let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
+    let all = a.append(b.append(c.append(it)));
+
+    hypermelon::render(all, hypermelon::stdout_fmt())
+}
+
+```
+
+### Output Text:
+```html
+<a1>
+    <b1>
+        <c1>
+            <x1:0></x1:0>
+            <x1:1></x1:1>
+            <x1:2></x1:2>
+            <x1:3></x1:3>
+            <x1:4></x1:4>
+        </c1>
+    </b1>
+</a1>
+```
+
+## Stack Example
+
+```rust
+use hypermelon::build;
+use hypermelon::prelude::*;
+
+fn main() -> std::fmt::Result {
+    let all = build::from_stack(|stack| {
+        let a = build::elem("a2");
+        let b = build::elem("b2");
+        let c = build::elem("c2");
+
+        let mut stack = stack.push(a)?.push(b)?.push(c)?;
+
+        for i in 0..5 {
+            let e = build::elem(format_move!("x2:{}", i)).inline();
+            stack.put(e)?;
+        }
+        stack.pop()?.pop()?.pop()
+    });
+
+    hypermelon::render(all, hypermelon::stdout_fmt())
+}
+
+```
+
+### Output Text:
+```html
+<a2>
+    <b2>
+        <c2>
+            <x2:0></x2:0>
+            <x2:1></x2:1>
+            <x2:2></x2:2>
+            <x2:3></x2:3>
+            <x2:4></x2:4>
+        </c2>
+    </b2>
+</a2>
+ ```
+
+### SVG Example
 
 ```rust
 use hypermelon::build;
@@ -33,27 +107,25 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = (0..50).step_by(5).map(|r| {
-        let o = r % 10 == 0;
-
-        let a =
-            o.then(|| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
-
-        let b = (!o).then(|| {
-            build::single("rect").with(attrs!(
-                ("x", 50 - r),
-                ("y", 50 - r),
-                ("width", r * 2),
-                ("height", r * 2)
-            ))
-        });
-
-        a.chain(b)
+    let rows = build::from_stack(|mut f| {
+        for r in (0..50).step_by(5) {
+            if r % 10 == 0 {
+                let c = build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)));
+                f.put(c)?;
+            } else {
+                let r = build::single("rect").with(attrs!(
+                    ("x", 50 - r),
+                    ("y", 50 - r),
+                    ("width", r * 2),
+                    ("height", r * 2)
+                ));
+                f.put(r)?;
+            }
+        }
+        Ok(f)
     });
 
-    let table = build::elem("g")
-        .with(("class", "test"))
-        .append(build::from_iter(rows));
+    let table = build::elem("g").with(("class", "test")).append(rows);
 
     let all = svg.append(style).append(rect).append(table);
 
@@ -62,30 +134,27 @@ fn main() -> std::fmt::Result {
 
 ```
 
-### Output Text:
+### Output
+
 ```html
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-	<style> .test{fill:none;stroke:white;stroke-width:3}</style>
-	<rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
-	<g class="test">
-		<circle cx="50" cy="50" r="0"/>
-		<rect x="45" y="45" width="10" height="10"/>
-		<circle cx="50" cy="50" r="10"/>
-		<rect x="35" y="35" width="30" height="30"/>
-		<circle cx="50" cy="50" r="20"/>
-		<rect x="25" y="25" width="50" height="50"/>
-		<circle cx="50" cy="50" r="30"/>
-		<rect x="15" y="15" width="70" height="70"/>
-		<circle cx="50" cy="50" r="40"/>
-		<rect x="5" y="5" width="90" height="90"/>
-	</g>
+    <style> .test{fill:none;stroke:white;stroke-width:3}</style>
+    <rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
+    <g class="test">
+        <circle cx="50" cy="50" r="0"/>
+        <rect x="45" y="45" width="10" height="10"/>
+        <circle cx="50" cy="50" r="10"/>
+        <rect x="35" y="35" width="30" height="30"/>
+        <circle cx="50" cy="50" r="20"/>
+        <rect x="25" y="25" width="50" height="50"/>
+        <circle cx="50" cy="50" r="30"/>
+        <rect x="15" y="15" width="70" height="70"/>
+        <circle cx="50" cy="50" r="40"/>
+        <rect x="5" y="5" width="90" height="90"/>
+    </g>
 </svg>
 ```
 
-
-### Output Image:
-
-<img src="./assets/svg_example.svg" alt="demo">
 
 
 See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
@@ -97,7 +166,10 @@ See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/as
 You can append elements via building of long adaptor chains, or you can render
 elements to a writer on the fly. With chaining,
 you don't have to worry about handling errors because nothing actually gets written out
-as you're chaining. 
+as you're chaining. However, you do tend to have to build things 'upside down'. You have to build
+the elements thats are the most nested first, and then you can append that to bigger and bigger elements.
+With rendering on the fly, yeah you have to handle errors, but the order in which elements are handled
+matches how they are rendered.
 You can mix and match because you can make elements from closures and then chain those elements together.
 
 ### Inline function
@@ -108,12 +180,9 @@ within it will be inlined.
 ### Is there escape XML protection?
 
 Attributes are fed through a escape protectors. Tag names are fed through escape protectors. 
-User can bypass this using the `raw_escpapable()` or `from_closure_escapable()` functions. This returns the only element type that doesnt implement `elem::Locked`.
+User can bypass this using the `raw_escpapable()` or `from_stack_escapable()` functions. This returns the only element type that doesnt implement `elem::Locked`.
 `render()` requires that the chained together element implements `Locked`. If the user chains in a raw element, the whole
 chain will not implement `Locked`. Instead the user would have to use `render_escapable()`. The element chaining system works by having each element implement a `render_head()`, and a `render_tail()` function.
-
-If you want to implement your own custom `Elem` outside of this crate, you can safefully implement `Locked`. This crate does not expose an api that allows you to make an `Elem` that isnt locked. 
-
 
 ### What happened to the tagger crate?
 
