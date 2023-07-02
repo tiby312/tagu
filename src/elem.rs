@@ -410,7 +410,6 @@ impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> ClosureEscapable<I> {
     }
 }
 
-
 pub struct Closure2<I> {
     pub func: I,
 }

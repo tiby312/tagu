@@ -27,17 +27,24 @@ fn main() -> std::fmt::Result {
             ("style", "fill:blue")
         )))?;
 
-        let rows = (0..50)
-            .step_by(10)
-            .map(|r| build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r))));
+        let mut w = w.push(build::elem("g").with(("class", "test")))?;
 
-        let e = build::elem("g")
-            .with(("class", "test"))
-            .append(build::from_iter(rows));
+        for r in (0..50).step_by(5) {
+            if r % 10 == 0 {
+                let c = build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)));
+                w.put(c)?;
+            } else {
+                let r = build::single("rect").with(attrs!(
+                    ("x", 50 - r),
+                    ("y", 50 - r),
+                    ("width", r * 2),
+                    ("height", r * 2)
+                ));
+                w.put(r)?;
+            }
+        }
 
-        w.put(e)?;
-
-        w.pop()
+        w.pop()?.pop()
     });
 
     hypermelon::render(all, hypermelon::stdout_fmt())
