@@ -27,23 +27,24 @@ pub struct ElemStack<'a, T> {
 }
 
 impl<'a, T> ElemStack<'a, T> {
-    pub fn put<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let tail = elem.render_head(self.writer.borrow_mut2())?;
-        tail.render(self.writer.borrow_mut2())
+    pub fn put<E: Elem+Locked>(&mut self, elem: E) -> fmt::Result {
+        self.writer.render_inner(elem)
     }
-    pub fn push<E: Elem>(
+    pub fn push<E: Elem+Locked>(
         mut self,
         elem: E,
     ) -> Result<ElemStack<'a, Popper<E::Tail, T>>, fmt::Error> {
         let tail = elem.render_head(self.writer.borrow_mut2())?;
-
-        Ok(ElemStack {
+        Ok(self.push_tail(tail))
+    }
+    fn push_tail<O>(self,tail:O)->ElemStack<'a,Popper<O,T>>{
+        ElemStack {
             writer: self.writer,
             inner: Popper {
                 elem: tail,
                 last: self.inner,
             },
-        })
+        }
     }
 }
 

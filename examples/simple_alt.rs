@@ -27,6 +27,8 @@ fn main() -> std::fmt::Result {
 
         let mut w = test(w)?;
 
+        w.put(build::raw_escapable("hay"))?;
+
         w.put(build::single("rect").with(attrs!(
             ("x1", 0),
             ("y1", 0),
