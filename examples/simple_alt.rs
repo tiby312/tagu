@@ -1,7 +1,5 @@
 use hypermelon::build;
-use hypermelon::elem::Locked;
 use hypermelon::prelude::*;
-use hypermelon::stack::ElemStack;
 
 fn main() -> std::fmt::Result {
     let width = 100.0;

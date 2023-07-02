@@ -223,6 +223,7 @@ pub trait Elem {
     type Tail: ElemTail;
     fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
+    #[deprecated]
     fn render_closure<K>(
         self,
         mut w: ElemWrite,
@@ -408,6 +409,7 @@ impl<I: FnOnce(&mut ElemWriteEscapable) -> fmt::Result> ClosureEscapable<I> {
         ClosureEscapable { func }
     }
 }
+
 
 pub struct Closure2<I> {
     pub func: I,
