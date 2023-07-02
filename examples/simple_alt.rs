@@ -1,12 +1,11 @@
 use hypermelon::build;
 use hypermelon::prelude::*;
-use hypermelon::render::PrettyFmt;
 
 fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    hypermelon::session(hypermelon::stdout_fmt(), PrettyFmt::new(), |w| {
+    hypermelon::session(hypermelon::stdout_fmt()).build(|w| {
         let mut w = w.push(build::elem("svg").with(attrs!(
             ("xmlns", "http://www.w3.org/2000/svg"),
             ("viewBox", format_move!("0 0 {} {}", width, height))

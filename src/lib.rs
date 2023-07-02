@@ -12,8 +12,8 @@ use attr::*;
 pub mod render;
 
 use elem::*;
+use render::PrettyFmt;
 use tools::WriteWrap;
-
 
 pub mod prelude {
     //! The hypermelon prelude
@@ -27,63 +27,143 @@ pub struct Sentinel {
     _p: (),
 }
 
-pub struct Doop<E, O> {
+pub trait Pop {
+    type Curr: ElemTail;
+    type Last;
+    fn next(self) -> (Self::Curr, Self::Last);
+}
+impl<E: ElemTail, O> Pop for Popper<E, O> {
+    type Curr = E;
+    type Last = O;
+    fn next(self) -> (E, O) {
+        (self.elem, self.last)
+    }
+}
+
+pub struct Popper<E, O> {
     elem: E,
     last: O,
 }
 
-pub struct MyWrite<W, F, T> {
-    writer: W,
-    fmt: F,
+pub struct MyWrite<'a, T> {
+    writer: ElemWrite<'a>,
     inner: T,
 }
 
-impl<W: fmt::Write, F: render::Fmt, T> MyWrite<W, F, T> {
+// pub enum EitherA<A, B> {
+//     A(A),
+//     B(B),
+// }
+// impl<A: Pop, B: Pop> Pop for EitherA<A, B> {
+//     type Curr = EitherA<A::Curr, B::Curr>;
+//     type Last = EitherA<A::Last, B::Last>;
+//     fn next(self) -> (Self::Curr, Self::Last) {
+//         match self {
+//             EitherA::A(a) => {
+//                 let (a, b) = a.next();
+//                 (EitherA::A(a), EitherA::A(b))
+//             }
+//             EitherA::B(a) => {
+//                 let (a, b) = a.next();
+//                 (EitherA::B(a), EitherA::B(b))
+//             }
+//         }
+//     }
+// }
+// impl<A: ElemTail, B: ElemTail> ElemTail for EitherA<A, B> {
+//     fn render(self, w: &mut ElemWrite) -> std::fmt::Result {
+//         match self {
+//             EitherA::A(a) => a.render(w),
+//             EitherA::B(a) => a.render(w),
+//         }
+//     }
+// }
+
+impl<'a, T> MyWrite<'a, T> {
+    // pub fn eithera<B>(self) -> MyWrite<'a, EitherA<T, B>> {
+    //     MyWrite{writer:self.writer,inner:EitherA::A(self.inner)}
+    // }
+    // pub fn eitherb<A>(self) -> MyWrite<'a, EitherA<A, T>> {
+    //     MyWrite{writer:self.writer,inner:EitherA::B(self.inner)}
+    // }
     pub fn put<E: Elem>(&mut self, elem: E) -> fmt::Result {
-        let ee = &mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt);
-        let tail = elem.render_head(ee)?;
-        tail.render(ee)
+        let tail = elem.render_head(&mut self.writer)?;
+        tail.render(&mut self.writer)
     }
-    pub fn push<E: Elem>(mut self, elem: E) -> Result<MyWrite<W, F, Doop<E::Tail, T>>, fmt::Error> {
-        let tail = elem.render_head(&mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt))?;
+    pub fn push<E: Elem>(mut self, elem: E) -> Result<MyWrite<'a, Popper<E::Tail, T>>, fmt::Error> {
+        let tail = elem.render_head(&mut self.writer)?;
 
         Ok(MyWrite {
             writer: self.writer,
-            fmt: self.fmt,
-            inner: Doop {
+            inner: Popper {
                 elem: tail,
                 last: self.inner,
             },
         })
     }
 }
-impl<W: fmt::Write, F: render::Fmt, E: ElemTail, T> MyWrite<W, F, Doop<E, T>> {
-    pub fn pop(mut self) -> Result<MyWrite<W, F, T>, fmt::Error> {
-        self.inner
-            .elem
-            .render(&mut ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt))?;
+
+impl<'a, P: Pop> MyWrite<'a, P> {
+    pub fn pop(mut self) -> Result<MyWrite<'a, P::Last>, fmt::Error> {
+        let (e, l) = self.inner.next();
+        e.render(&mut self.writer)?;
 
         Ok(MyWrite {
             writer: self.writer,
-            fmt: self.fmt,
-            inner: self.inner.last,
+            inner: l,
         })
     }
 }
 
+pub struct Sess<F> {
+    func: F,
+}
 
-pub fn session<F: render::Fmt, W: fmt::Write>(
+// impl<F> Elem for Sess<F> where F:FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error> {
+//     type Tail = ();
+//     fn render_head(self, w: &mut ElemWrite) -> Result<Self::Tail, fmt::Error> {
+//         (self.func)(w)?;
+//         Ok(())
+//     }
+// }
+
+pub fn sess<F>(func: F) -> Sess<F>
+where
+    F: FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
+{
+    Sess { func }
+}
+
+pub fn session<W: fmt::Write>(writer: W) -> SessionStarter<W, PrettyFmt> {
+    SessionStarter::new(writer)
+}
+
+pub struct SessionStarter<W, F> {
     writer: W,
     fmt: F,
-    func: impl FnOnce(MyWrite<W, F, Sentinel>) -> Result<MyWrite<W, F, Sentinel>, fmt::Error>,
-) -> fmt::Result {
-    let k = MyWrite {
-        writer,
-        fmt,
-        inner: Sentinel { _p: () },
-    };
-    let _ = func(k)?;
-    Ok(())
+}
+impl<W: fmt::Write> SessionStarter<W, PrettyFmt> {
+    pub fn new(writer: W) -> Self {
+        SessionStarter {
+            writer,
+            fmt: PrettyFmt::new(),
+        }
+    }
+}
+impl<W: fmt::Write, F: render::Fmt> SessionStarter<W, F> {
+    pub fn build(
+        &mut self,
+        func: impl FnOnce(MyWrite<Sentinel>) -> Result<MyWrite<Sentinel>, fmt::Error>,
+    ) -> fmt::Result {
+        let writer = ElemWrite(WriteWrap(&mut self.writer), &mut self.fmt);
+
+        let k = MyWrite {
+            writer,
+            inner: Sentinel { _p: () },
+        };
+        let _ = func(k)?;
+        Ok(())
+    }
 }
 
 ///
