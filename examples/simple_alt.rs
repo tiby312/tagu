@@ -1,16 +1,19 @@
 use hypermelon::build;
 use hypermelon::prelude::*;
-use hypermelon::MyWrite;
+use hypermelon::stack::ElemStack;
 
-fn test<T>(a: MyWrite<T>) -> Result<MyWrite<T>, std::fmt::Error> {
-    Ok(a)
+fn test<T>(a: ElemStack<T>) -> Result<ElemStack<T>, std::fmt::Error> {
+    let a = a.push(build::elem("svg"))?;
+    let a = a.push(build::elem("svg"))?;
+    let a = a.push(build::elem("svg"))?;
+    a.pop()?.pop()?.pop()
 }
 
 fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let all = hypermelon::sess(|w| {
+    let all = build::render_stack(|w| {
         let mut w = w.push(build::elem("svg").with(attrs!(
             ("xmlns", "http://www.w3.org/2000/svg"),
             ("viewBox", format_move!("0 0 {} {}", width, height))
@@ -21,6 +24,8 @@ fn main() -> std::fmt::Result {
                 .append(".test{fill:none;stroke:white;stroke-width:3}")
                 .inline(),
         )?;
+
+        let mut w = test(w)?;
 
         w.put(build::single("rect").with(attrs!(
             ("x1", 0),

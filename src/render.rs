@@ -2,7 +2,6 @@
 //! Functionality to change rendering pretty print vs none.
 //!
 
-
 use super::*;
 pub struct Renderer<D: Fmt> {
     fmt: D,
@@ -30,7 +29,7 @@ impl<D: Fmt> Renderer<D> {
         elem: E,
         mut writer: W,
     ) -> fmt::Result {
-        ElemWrite(WriteWrap(&mut writer), &mut self.fmt).render(elem)
+        ElemWrite(WriteWrap(&mut writer), &mut self.fmt).render_inner(elem)
     }
     pub fn render_escapable<E: Elem, W: fmt::Write>(
         &mut self,
