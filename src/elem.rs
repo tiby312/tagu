@@ -64,7 +64,7 @@ impl<'a> ElemWriteEscapable<'a> {
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
 
 impl<'a> ElemWrite<'a> {
-    pub fn borrow_mut2(&mut self) -> ElemWrite {
+    pub(crate) fn borrow_mut2(&mut self) -> ElemWrite {
         ElemWrite(self.0.borrow_mut(), self.1)
     }
 
@@ -128,7 +128,7 @@ impl<'a> ElemWrite<'a> {
     pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable {
         ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
     }
-    fn writer_escapable(&mut self) -> WriteWrap {
+    pub(crate) fn writer_escapable(&mut self) -> WriteWrap {
         self.0.borrow_mut()
     }
 
