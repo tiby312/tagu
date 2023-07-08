@@ -47,7 +47,7 @@ fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
         let a = build::elem("a2");
         let b = build::elem("b2");
-        let c = build::elem("c2");
+        let c = build::elem("c2").with_tab("→");
 
         let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
@@ -58,7 +58,7 @@ fn main() -> std::fmt::Result {
         stack.pop()?.pop()?.pop()
     });
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    hypermelon::render(all.with_tab(" "), hypermelon::stdout_fmt())
 }
 
 ```
@@ -66,17 +66,17 @@ fn main() -> std::fmt::Result {
 ### Output Text:
 ```html
 <a2>
-    <b2>
-        <c2>
-            <x2:0></x2:0>
-            <x2:1></x2:1>
-            <x2:2></x2:2>
-            <x2:3></x2:3>
-            <x2:4></x2:4>
-        </c2>
-    </b2>
+ <b2>
+→→<c2>
+→→→<x2:0></x2:0>
+→→→<x2:1></x2:1>
+→→→<x2:2></x2:2>
+→→→<x2:3></x2:3>
+→→→<x2:4></x2:4>
+→→</c2>
+ </b2>
 </a2>
- ```
+```
 
 ### SVG Example
 
