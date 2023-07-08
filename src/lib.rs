@@ -1,7 +1,7 @@
 //! Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust.
 //!
-//! You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
-//! Documentation at [docs.rs](https://docs.rs/hypermelon)
+//! You can find tagu on [github](https://github.com/tiby312/tagu) and [crates.io](https://crates.io/crates/tagu).
+//! Documentation at [docs.rs](https://docs.rs/tagu)
 
 pub mod tools;
 use std::fmt;
@@ -15,7 +15,7 @@ use elem::*;
 use tools::WriteWrap;
 
 pub mod prelude {
-    //! The hypermelon prelude
+    //! The tagu prelude
     pub use super::attrs;
     pub use super::elem::Elem;
     pub use super::elems;

@@ -1,5 +1,5 @@
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let a = build::elem("a1");
@@ -8,5 +8,5 @@ fn main() -> std::fmt::Result {
     let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
     let all = a.append(b.append(c.append(it)));
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }

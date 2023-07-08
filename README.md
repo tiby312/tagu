@@ -1,14 +1,14 @@
 Build xml / html / svg programmatically by chaining structs together or by closures. Instead of using a templating engine, write data/markup that 'looks like' rust. User has control over formatting via the `inline()` function.
 
-You can find hypermelon on [github](https://github.com/tiby312/hypermelon) and [crates.io](https://crates.io/crates/hypermelon).
-Documentation at [docs.rs](https://docs.rs/hypermelon)
+You can find tagu on [github](https://github.com/tiby312/tagu) and [crates.io](https://crates.io/crates/tagu).
+Documentation at [docs.rs](https://docs.rs/tagu)
 
 
 ### Adaptor Example:
 
 ```rust
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let a = build::elem("a1");
@@ -17,7 +17,7 @@ fn main() -> std::fmt::Result {
     let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
     let all = a.append(b.append(c.append(it)));
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }
 
 ```
@@ -40,8 +40,8 @@ fn main() -> std::fmt::Result {
 ## Stack Example
 
 ```rust
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
@@ -58,7 +58,7 @@ fn main() -> std::fmt::Result {
         stack.pop()?.pop()?.pop()
     });
 
-    hypermelon::render(all.with_tab(" "), hypermelon::stdout_fmt())
+    tagu::render(all.with_tab(" "), tagu::stdout_fmt())
 }
 
 ```
@@ -81,8 +81,8 @@ fn main() -> std::fmt::Result {
 ### SVG Example
 
 ```rust
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let width = 100.0;
@@ -129,7 +129,7 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(style).append(rect).append(table);
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }
 
 ```
@@ -157,7 +157,7 @@ fn main() -> std::fmt::Result {
 
 
 
-See other example outputs at [https://github.com/tiby312/hypermelon/tree/main/assets](https://github.com/tiby312/hypermelon/tree/main/assets)
+See other example outputs at [https://github.com/tiby312/tagu/tree/main/assets](https://github.com/tiby312/tagu/tree/main/assets)
 
 
 
@@ -187,8 +187,8 @@ chain will not implement `Locked`. Instead the user would have to use `render_es
 ### What happened to the tagger crate?
 
 I left the tagger crate alone and made this into a brand new crate because while it does have all
-the functionality of tagger, it is more complicated. Some people might just like the simplicity of tagger. However, I recommend people choose hypermelon over tagger, because I think its a lot more flexible. The ability to pass around element chains like structs is really useful in my experience.
+the functionality of tagger, it is more complicated. Some people might just like the simplicity of tagger. However, I recommend people choose tagu over tagger, because I think its a lot more flexible. The ability to pass around element chains like structs is really useful in my experience.
 
 ### Name origin?
 
-So its not easy to find crate names these days. A lot of good ones are taken. This one started out as ht-melon because it has "html" in the name, but it just looked jarring in the code everywhere so I changed it to hypermelon.
+So its not easy to find crate names these days. A lot of good ones are taken. This one started out as ht-melon because it has "html" in the name, but it just looked jarring in the code everywhere so I changed it to tagu.

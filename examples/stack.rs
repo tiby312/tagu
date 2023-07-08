@@ -1,5 +1,5 @@
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
@@ -16,5 +16,5 @@ fn main() -> std::fmt::Result {
         stack.pop()?.pop()?.pop()
     });
 
-    hypermelon::render(all.with_tab(" "), hypermelon::stdout_fmt())
+    tagu::render(all.with_tab(" "), tagu::stdout_fmt())
 }

@@ -173,8 +173,8 @@ impl<'a, 'b> PathSinkBuilder<'a, 'b> {
 /// a more flexible api that uses a closure
 ///
 /// ```
-/// use hypermelon::attr::PathClosure;
-/// use hypermelon::attr::PathCommand::*;
+/// use tagu::attr::PathClosure;
+/// use tagu::attr::PathCommand::*;
 /// PathClosure::new(|s| {
 ///    let mut s = s.start();
 ///    s.put(M(0, 0))?;

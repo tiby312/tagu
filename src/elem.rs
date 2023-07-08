@@ -22,7 +22,7 @@ impl<'a> ElemWriteEscapable<'a> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn render<E: Elem>(&mut self, elem: E) -> fmt::Result {
         let tail = elem.render_head(self.as_elem_write())?;
         tail.render(self.as_elem_write())
@@ -31,14 +31,14 @@ impl<'a> ElemWriteEscapable<'a> {
         ElemWrite(WriteWrap(self.0 .0), self.1)
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn render_map<E: Elem, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self.as_elem_write())?;
         tail.render(self.as_elem_write())
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn session<'b, E: Elem>(&'b mut self, elem: E) -> SessionEscapable<'b, E> {
         SessionEscapable {
             elem,
@@ -46,7 +46,7 @@ impl<'a> ElemWriteEscapable<'a> {
         }
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn session_map<'b, E: Elem, F: FnOnce() -> E>(
         &'b mut self,
         func: F,
@@ -74,19 +74,19 @@ impl<'a> ElemWrite<'a> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn render<E: Elem + Locked>(&mut self, elem: E) -> fmt::Result {
         self.render_inner(elem)
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn render_map<E: Elem + Locked, F: FnOnce() -> E>(&mut self, func: F) -> fmt::Result {
         let elem = func();
         let tail = elem.render_head(self.borrow_mut2())?;
         tail.render(self.borrow_mut2())
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn session<'b, E: Elem + Locked>(&'b mut self, elem: E) -> Session<'b, E> {
         Session {
             elem,
@@ -100,7 +100,7 @@ impl<'a> ElemWrite<'a> {
         ret
     }
 
-    #[deprecated(note = "use hypermelon::session")]
+    #[deprecated(note = "use tagu::session")]
     pub fn session_map<'b, E: Elem + Locked, F: FnOnce() -> E>(
         &'b mut self,
         func: F,

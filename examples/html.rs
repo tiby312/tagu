@@ -1,5 +1,5 @@
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let html = build::single("DOCTYPE html")
@@ -52,5 +52,5 @@ animation: mymove 5s infinite;
 
     let all = html.append(style).append(table);
 
-    hypermelon::render(all.with_tab(" "),hypermelon::stdout_fmt())
+    tagu::render(all.with_tab(" "),tagu::stdout_fmt())
 }

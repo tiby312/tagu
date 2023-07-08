@@ -9,8 +9,8 @@ use super::*;
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::raw_escapable("<test>I can insert my own elements!</test>");
-/// hypermelon::render_escapable(k,&mut s).unwrap()
+/// let k = tagu::build::raw_escapable("<test>I can insert my own elements!</test>");
+/// tagu::render_escapable(k,&mut s).unwrap()
 ///
 /// ```
 ///
@@ -27,18 +27,18 @@ pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::from_closure_escapable(|w|{
+/// let k = tagu::build::from_closure_escapable(|w|{
 ///
-///     w.render(hypermelon::build::raw_escapable("<test/>"))?;
+///     w.render(tagu::build::raw_escapable("<test/>"))?;
 ///     
-///     w.render(hypermelon::build::single("test2"))
+///     w.render(tagu::build::single("test2"))
 ///
 /// });
-/// hypermelon::render_escapable(k,&mut s).unwrap()
+/// tagu::render_escapable(k,&mut s).unwrap()
 ///
 /// ```
 ///
-#[deprecated(note = "use hypermelon::session")]
+#[deprecated(note = "use tagu::session")]
 pub fn from_closure_escapable<F: FnOnce(&mut ElemWriteEscapable) -> fmt::Result>(
     func: F,
 ) -> ClosureEscapable<F> {
@@ -50,21 +50,21 @@ pub fn from_closure_escapable<F: FnOnce(&mut ElemWriteEscapable) -> fmt::Result>
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::from_closure(|w|{
+/// let k = tagu::build::from_closure(|w|{
 ///
-///     w.render(hypermelon::build::single("test"))
+///     w.render(tagu::build::single("test"))
 ///
 /// });
-/// hypermelon::render(k,&mut s).unwrap()
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 ///
-#[deprecated(note = "use hypermelon::session")]
+#[deprecated(note = "use tagu::session")]
 pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closure<F> {
     Closure::new(func)
 }
 
-#[deprecated(note = "use hypermelon::session")]
+#[deprecated(note = "use tagu::session")]
 pub fn from_closure2<F: FnOnce() -> E, E: Elem>(func: F) -> Closure2<F> {
     Closure2 { func }
 }
@@ -89,8 +89,8 @@ where
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::from_iter((0..10).map(|_|hypermelon::build::single("hello")));
-/// hypermelon::render(k,&mut s).unwrap()
+/// let k = tagu::build::from_iter((0..10).map(|_|tagu::build::single("hello")));
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 ///
@@ -103,8 +103,8 @@ pub fn from_iter<I: Iterator<Item = R>, R: Elem>(iter: I) -> Iter<I> {
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::single("hello");
-/// hypermelon::render(k,&mut s).unwrap()
+/// let k = tagu::build::single("hello");
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 pub fn single<D: fmt::Display>(tag: D) -> Single<D, (), &'static str, &'static str> {
@@ -116,8 +116,8 @@ pub fn single<D: fmt::Display>(tag: D) -> Single<D, (), &'static str, &'static s
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::elem("hello");
-/// hypermelon::render(k,&mut s).unwrap()
+/// let k = tagu::build::elem("hello");
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 pub fn elem<D: fmt::Display>(tag: D) -> Element<D, ()> {
@@ -129,9 +129,9 @@ pub fn elem<D: fmt::Display>(tag: D) -> Element<D, ()> {
 ///
 /// ```
 /// let mut s = String::new();
-/// let k = hypermelon::build::single("hello");
-/// let k = hypermelon::build::box_elem(k);
-/// hypermelon::render(k,&mut s).unwrap()
+/// let k = tagu::build::single("hello");
+/// let k = tagu::build::box_elem(k);
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 pub fn box_elem<'a, E: Elem + 'a>(elem: E) -> DynamicElement<'a> {
@@ -142,14 +142,14 @@ pub fn box_elem<'a, E: Elem + 'a>(elem: E) -> DynamicElement<'a> {
 /// Create an attr from a closure.
 ///
 /// ```
-/// use hypermelon::build;
+/// use tagu::build;
 /// let mut s = String::new();
 /// let k = build::elem("hello").with(
 ///     build::attr_from_closure(|w|
 ///         w.render(("test","val"))
 ///     )
 /// );
-/// hypermelon::render(k,&mut s).unwrap()
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 #[deprecated]
@@ -161,15 +161,15 @@ pub fn attr_from_closure<F: FnOnce(&mut AttrWrite) -> fmt::Result>(func: F) -> A
 /// Create a path attribute
 ///
 /// ```
-/// use hypermelon::build;
-/// use hypermelon::attr::PathCommand;
+/// use tagu::build;
+/// use tagu::attr::PathCommand;
 /// let mut s = String::new();
 /// let k = build::elem("hello").with(
 ///     build::path(
 ///         (0..10).map(|_|PathCommand::L(5.0,5.0))
 ///     )
 /// );
-/// hypermelon::render(k,&mut s).unwrap()
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) -> Path<I> {
@@ -180,14 +180,14 @@ pub fn path<I: IntoIterator<Item = PathCommand<D>>, D: fmt::Display>(iter: I) ->
 /// Create a points attribute
 ///
 /// ```
-/// use hypermelon::build;
+/// use tagu::build;
 /// let mut s = String::new();
 /// let k = build::elem("hello").with(
 ///     build::points(
 ///         (0..10).map(|_|(5.0,5.0))
 ///     )
 /// );
-/// hypermelon::render(k,&mut s).unwrap()
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Points<I> {
@@ -198,8 +198,8 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 /// Create a path attribute from a closure
 ///
 /// ```
-/// use hypermelon::build;
-/// use hypermelon::attr::PathCommand;
+/// use tagu::build;
+/// use tagu::attr::PathCommand;
 /// let mut s = String::new();
 /// let k = build::elem("hello").with(
 ///     build::path_from_closure(|w|{
@@ -208,7 +208,7 @@ pub fn points<I: IntoIterator<Item = (D, D)>, D: fmt::Display>(iter: I) -> Point
 ///         w.put(PathCommand::L(5.0,5.0))
 ///     })
 /// );
-/// hypermelon::render(k,&mut s).unwrap()
+/// tagu::render(k,&mut s).unwrap()
 ///
 /// ```
 ///

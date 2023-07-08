@@ -1,10 +1,10 @@
 [package]
-name = "hypermelon"
+name = "tagu"
 version = "0.6.1"
 edition = "2021"
 authors = ["Ken <kenakioreed@gmail.com>"]
 license = "MIT"
-repository = "https://github.com/tiby312/hypermelon"
+repository = "https://github.com/tiby312/tagu"
 description = "Write SVG / HTML / XML programmatically"
 keywords = ["svg", "html","xml","tag","markup"]
 readme = "README.md"

@@ -1,7 +1,7 @@
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
-use hypermelon::attr::PathCommand::*;
+use tagu::attr::PathCommand::*;
 fn main() -> std::fmt::Result {
     let width = 500.0;
     let height = 400.0;
@@ -29,5 +29,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(path1).append(path2);
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }

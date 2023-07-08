@@ -1,5 +1,5 @@
-use hypermelon::build;
-use hypermelon::prelude::*;
+use tagu::build;
+use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let width = 500.0;
@@ -20,5 +20,5 @@ fn main() -> std::fmt::Result {
 
     let all = svg.append(polygon);
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }
