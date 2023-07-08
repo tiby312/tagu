@@ -9,7 +9,7 @@ pub mod attr;
 pub mod build;
 pub mod elem;
 use attr::*;
-pub mod render;
+mod render;
 pub mod stack;
 use elem::*;
 use tools::WriteWrap;
