@@ -490,7 +490,7 @@ impl<D: fmt::Display> Elem for Raw<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
-        write!(w.writer(), " {}", self.data)?;
+        write!(w.writer(), "{}", self.data)?;
         w.end_tag()?;
         Ok(())
     }
@@ -521,7 +521,7 @@ impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //w.tabs()?;
-        write!(w.writer_escapable(), " {}", self.data)?;
+        write!(w.writer_escapable(), "{}", self.data)?;
         w.end_tag()?;
         Ok(())
     }
