@@ -107,47 +107,76 @@ pub mod inline {
     }
     use super::*;
     pub struct InlineController {
-        inline: InlineSigl,
-        tabs: isize,
+        pub inline: InlineSigl,
+        pub ignore_tab:bool,
+        pub tabs: isize,
         tab_char: &'static str,
+        pub extra:Option<()>
     }
     impl InlineController {
         pub fn new() -> Self {
             InlineController {
                 inline: InlineSigl::Pretty,
-                tabs: -1,
+                tabs: 0,
                 tab_char: "\t",
+                extra:None,
+                ignore_tab:false
             }
         }
+
+
+
         pub fn start(
             &mut self,
             w: &mut dyn fmt::Write,
             inline: InlineSigl,
         ) -> Result<InlineSigl, fmt::Error> {
-            //dbg!(&self.inline,&inline);
-            match self.inline {
-                InlineSigl::Inline => Ok(self.inline.clone()),
-                InlineSigl::Pretty => match inline {
-                    InlineSigl::Inline => {
-                        self.inline = inline.clone();
-                        Ok(inline)
-                    }
-                    InlineSigl::Pretty => {
-                        let k = self.inline.clone();
-                        self.inline = inline;
+            let og=self.inline.clone();
 
-                        self.tabs(w)?;
-                        writeln!(w)?;
-                        self.tabs += 1;
-                        Ok(k)
+            match inline{
+                InlineSigl::Inline=>{}
+                InlineSigl::Pretty=>{
+                    match self.inline{
+                        InlineSigl::Inline=>{}
+                        InlineSigl::Pretty=>{
+                            self.inline = inline;
+
+                            self.tabs(w)?;
+                            //writeln!(w)?;
+                            self.tabs += 1;
+                        }
                     }
-                },
+                }
             }
+            //dbg!(&self.inline,&inline);
+            // match self.inline {
+            //     InlineSigl::Inline => {},
+            //     InlineSigl::Pretty => match inline {
+            //         InlineSigl::Inline => {
+            //             self.inline = inline.clone();
+                        
+            //         }
+            //         InlineSigl::Pretty => {
+            //             self.inline = inline;
+
+            //             self.tabs(w)?;
+            //             writeln!(w)?;
+            //             self.tabs += 1;
+                        
+            //         }
+            //     },
+            // }
+            Ok(og)
         }
 
         pub fn end(&mut self, w: &mut dyn fmt::Write, original_inline: InlineSigl) -> fmt::Result {
             match (&original_inline, &self.inline) {
-                (InlineSigl::Pretty, _) => {
+                (InlineSigl::Pretty,_) => {
+                    // if let InlineSigl::Pretty=k{
+                    //     //dbg!("hay");
+                    //     writeln!(w)?;
+                    //     self.tabs(w)?;
+                    // }
                     // writeln!(w)?;
                     // self.tabs(w)?;
                     self.tabs -= 1;
@@ -161,13 +190,18 @@ pub mod inline {
         pub fn reset_for_tail(&mut self, w: &mut dyn fmt::Write) -> fmt::Result {
             if let InlineSigl::Pretty = &self.inline {
                 writeln!(w)?;
+                //write!(w,"[[{}]]",self.tabs)?;
+                //self.tabs(w)?;
+                
             }
             Ok(())
         }
         pub fn tabs(&mut self, w: &mut dyn fmt::Write) -> fmt::Result {
             if let InlineSigl::Pretty = &self.inline {
-                for _ in 0..self.tabs {
-                    write!(w, "{}", self.tab_char)?;
+                if !self.ignore_tab{
+                    for _ in 0..self.tabs {
+                        write!(w, "{}", self.tab_char)?;
+                    }
                 }
             }
 

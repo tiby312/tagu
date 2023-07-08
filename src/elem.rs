@@ -109,23 +109,65 @@ impl<'a> ElemWrite<'a> {
         }
     }
 
-    fn inline_start_typical(&mut self) -> Result<InlineSigl, fmt::Error> {
-        self.1.start(&mut self.0, InlineSigl::Pretty)
-    }
+    // fn inline_start_typical(&mut self) -> Result<InlineSigl, fmt::Error> {
+    //     self.1.start(&mut self.0, InlineSigl::Pretty)
+    // }
 
-    fn inline_finish(&mut self, a: InlineSigl) -> fmt::Result {
-        self.1.end(&mut self.0, a)
-    }
+    // fn inline_finish(&mut self, a: InlineSigl) -> fmt::Result {
+    //     self.1.end(&mut self.0, a)
+    // }
 
-    fn inline_start_inline(&mut self) -> Result<InlineSigl, fmt::Error> {
-        self.1.start(&mut self.0, InlineSigl::Inline)
-    }
+    // fn inline_start_inline(&mut self) -> Result<InlineSigl, fmt::Error> {
+    //     self.1.start(&mut self.0, InlineSigl::Inline)
+    // }
 
-    fn tabs(&mut self) -> fmt::Result {
-        self.1.tabs(&mut self.0)
+    // fn tabs(&mut self) -> fmt::Result {
+    //     self.1.tabs(&mut self.0)
+    // }
+
+
+    //This is useful for RAW
+    // pub fn elem_head_start_no_tab(&mut self)->fmt::Result{
+    //     if let InlineSigl::Pretty=self.1.inline{
+    //         writeln!(self.0)?;
+    //         //self.1.tabs(&mut self.0)?;
+    //     }
+    //     Ok(())
+    // }
+
+
+    pub fn elem_head_start(&mut self)->fmt::Result{
+        if let InlineSigl::Pretty=self.1.inline{
+            writeln!(self.0)?;
+
+            self.1.tabs(&mut self.0)?;
+        }
+        Ok(())
     }
-    fn reset_for_tail(&mut self) -> fmt::Result {
-        self.1.reset_for_tail(&mut self.0)
+    pub fn elem_head_finish(&mut self)->fmt::Result{
+        if let InlineSigl::Pretty=self.1.inline{
+            self.1.tabs+=1;
+        }
+        Ok(())
+    }
+    pub fn elem_tail_start(&mut self)->fmt::Result{
+        if let InlineSigl::Pretty=self.1.inline{
+            
+            self.1.tabs-=1;
+            if !self.1.extra.take().is_some(){ 
+                
+                
+                writeln!(self.0)?;
+                self.1.tabs(&mut self.0)?;
+            }
+        }
+        Ok(())
+    }
+    pub fn elem_tail_finish(&mut self)->fmt::Result{
+        if let InlineSigl::Pretty=self.1.inline{
+
+        }
+        Ok(())
     }
 
     // fn set_inline_mode(&mut self, val: bool) {
@@ -290,6 +332,11 @@ pub trait Elem {
         Self: Sized,
     {
         Inliner { elem: self }
+    }
+
+    fn detab(self)->DeTab<Self> where Self:Sized
+    {
+        DeTab{elem:self}
     }
 
     fn some(self) -> Option<Self>
@@ -513,10 +560,9 @@ impl<D: fmt::Display> Locked for Raw<D> {}
 impl<D: fmt::Display> Elem for Raw<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let k = w.inline_start_typical()?;
-        //w.tabs()?;
-        write!(w.writer(), " {}", self.data)?;
-        w.inline_finish(k)
+        w.elem_head_start()?;
+        write!(w.writer(), "{}", self.data)?;
+        w.elem_tail_finish()
     }
 }
 
@@ -544,10 +590,9 @@ impl<D: fmt::Display> RawEscapable<D> {
 impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let k = w.inline_start_typical()?;
-        //w.tabs()?;
-        write!(w.writer_escapable(), " {}", self.data)?;
-        w.inline_finish(k)?;
+        w.elem_head_start()?;
+        write!(w.writer_escapable(), "{}", self.data)?;
+        w.elem_tail_finish()?;
         Ok(())
     }
 }
@@ -606,15 +651,16 @@ impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single
             ending,
         } = self;
 
-        let k = w.inline_start_typical()?;
-        w.tabs()?;
+        //let k = w.inline_start_typical()?;
+        //w.tabs()?;
+        w.elem_head_start()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}{}", start, tag)?;
         //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
         write!(w.writer(), "{}", ending)?;
         w.writer_escapable().write_str(">")?;
-        w.inline_finish(k)?;
+        w.elem_tail_finish()?;
         Ok(())
     }
 }
@@ -638,10 +684,50 @@ pub struct InlinerTail<K: ElemTail> {
 impl<D: ElemTail> ElemTail for InlinerTail<D> {
     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
         self.tail.render(w.borrow_mut2())?;
-        w.inline_finish(self.sigl)?;
-
+        //dbg!(&self.sigl);
+        //w.inline_finish(self.sigl)?;
+        //write!(w.writer(),"{}",")")?;
+        //w.reset_for_tail()?;
+        //w.tabs()?;
+        if let InlineSigl::Pretty=self.sigl{
+            w.1.inline=InlineSigl::Pretty;
+            w.1.extra=Some(());
+        }
         Ok(())
     }
+}
+
+
+pub struct DeTabTail<T>{
+    og_ignore_tab:bool,
+    tail:T
+}
+impl<D: ElemTail> ElemTail for DeTabTail<D> {
+    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
+        self.tail.render(w.borrow_mut2())?;
+        if !self.og_ignore_tab{
+            w.1.ignore_tab=false;
+        }
+        Ok(())
+    }
+}
+
+pub struct DeTab<E>{
+    elem:E,
+}
+impl<E> Locked for DeTab<E> {}
+impl<E: Elem> Elem for DeTab<E> {
+    type Tail = DeTabTail<E::Tail>;
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let og_ignore_tab=w.1.ignore_tab;
+        w.1.ignore_tab=true;
+        let tail=self.elem.render_head(w)?;
+        Ok(DeTabTail{
+            og_ignore_tab,
+            tail
+        })
+    }
+
 }
 
 //If inline() is called on all elements inside of an element,
@@ -656,10 +742,15 @@ impl<E: Elem> Elem for Inliner<E> {
     type Tail = InlinerTail<E::Tail>;
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         //dbg!("inliner start");
-        let sigl = w.inline_start_inline()?;
+        //write!(w.writer(),"{}","(")?;
+        
+        //let sigl = w.inline_start_inline()?;
+
+        let sigl=w.1.inline.clone();
+        w.1.inline=InlineSigl::Inline;
 
         let tail = self.elem.render_head(w)?;
-
+        
         Ok(InlinerTail { sigl, tail })
     }
 }
@@ -691,16 +782,19 @@ impl<D: fmt::Display, A: Attr> Element<D, A> {
 impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
     type Tail = ElementTail<D>;
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let Element { tag, attr } = self;
-        let sigl = w.inline_start_typical()?;
+        w.elem_head_start()?;
 
-        w.tabs()?;
+        
+        let Element { tag, attr } = self;
+        
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}", tag)?;
-        //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
         w.writer_escapable().write_str(">")?;
-        Ok(ElementTail { tag, sigl })
+        
+        w.elem_head_finish()?;
+
+        Ok(ElementTail { tag })
     }
 }
 impl<D: fmt::Display> Element<D, ()> {
@@ -715,21 +809,21 @@ impl<D: fmt::Display> Element<D, ()> {
 #[derive(Clone)]
 #[must_use]
 pub struct ElementTail<D> {
-    sigl: InlineSigl,
     tag: D,
 }
 
 impl<D: fmt::Display> ElemTail for ElementTail<D> {
     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
+        //write!(w.writer(),"{}","(")?;
         //TODO need to restart here???
-        w.reset_for_tail()?;
-        w.tabs()?;
+        //write!(w.writer(),"{}","[")?;
+        w.elem_tail_start()?;
         w.writer_escapable().write_str("</")?;
         write!(w.writer(), "{}", &self.tag)?;
         w.writer_escapable().write_char('>')?;
-
-        w.inline_finish(self.sigl)?;
-
+        w.elem_tail_finish()?;
+        
+        //write!(w.writer(),"{}",")")?;
         Ok(())
     }
 }
