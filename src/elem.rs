@@ -2,12 +2,14 @@
 //! Elem trait and building blocks
 //!
 
+use crate::render::inline::{self, InlineSigl};
+
 use super::*;
 
 ///
 /// Writer struct passed to escapable closure elem
 ///
-pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
+pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut inline::InlineController);
 
 impl<'a> ElemWriteEscapable<'a> {
     pub fn borrow_mut2(&mut self) -> ElemWriteEscapable {
@@ -61,7 +63,10 @@ impl<'a> ElemWriteEscapable<'a> {
 /// Writer struct passed to closure elem
 ///
 #[must_use]
-pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
+pub struct ElemWrite<'a>(
+    pub(crate) WriteWrap<'a>,
+    pub(crate) &'a mut inline::InlineController,
+);
 
 impl<'a> ElemWrite<'a> {
     pub(crate) fn borrow_mut2(&mut self) -> ElemWrite {
@@ -104,26 +109,45 @@ impl<'a> ElemWrite<'a> {
         }
     }
 
-    fn set_inline_mode(&mut self, val: bool) {
-        self.1.set_inline_mode(val)
+    fn inline_start_typical(&mut self) -> Result<InlineSigl, fmt::Error> {
+        self.1.start(&mut self.0, InlineSigl::Pretty)
     }
 
-    fn is_inline_mode(&mut self) -> bool {
-        self.1.is_inline_mode()
+    fn inline_finish(&mut self, a: InlineSigl) -> fmt::Result {
+        self.1.end(&mut self.0, a)
+    }
+
+    fn inline_start_inline(&mut self) -> Result<InlineSigl, fmt::Error> {
+        self.1.start(&mut self.0, InlineSigl::Inline)
     }
 
     fn tabs(&mut self) -> fmt::Result {
         self.1.tabs(&mut self.0)
     }
-    fn push(&mut self) {
-        self.1.push()
+    fn reset_for_tail(&mut self) -> fmt::Result {
+        self.1.reset_for_tail(&mut self.0)
     }
-    fn pop(&mut self) {
-        self.1.pop()
-    }
-    fn end_tag(&mut self) -> fmt::Result {
-        self.1.end_tag(&mut self.0)
-    }
+
+    // fn set_inline_mode(&mut self, val: bool) {
+    //     self.1.set_inline_mode(val)
+    // }
+
+    // fn is_inline_mode(&mut self) -> bool {
+    //     self.1.is_inline_mode()
+    // }
+
+    // fn tabs(&mut self) -> fmt::Result {
+    //     self.1.tabs(&mut self.0)
+    // }
+    // fn push(&mut self) {
+    //     self.1.push()
+    // }
+    // fn pop(&mut self) {
+    //     self.1.pop()
+    // }
+    // fn end_tag(&mut self) -> fmt::Result {
+    //     self.1.end_tag(&mut self.0)
+    // }
 
     pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable {
         ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
@@ -489,10 +513,10 @@ impl<D: fmt::Display> Locked for Raw<D> {}
 impl<D: fmt::Display> Elem for Raw<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let k = w.inline_start_typical()?;
         //w.tabs()?;
         write!(w.writer(), " {}", self.data)?;
-        w.end_tag()?;
-        Ok(())
+        w.inline_finish(k)
     }
 }
 
@@ -520,9 +544,10 @@ impl<D: fmt::Display> RawEscapable<D> {
 impl<D: fmt::Display> Elem for RawEscapable<D> {
     type Tail = ();
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let k = w.inline_start_typical()?;
         //w.tabs()?;
         write!(w.writer_escapable(), " {}", self.data)?;
-        w.end_tag()?;
+        w.inline_finish(k)?;
         Ok(())
     }
 }
@@ -580,6 +605,8 @@ impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single
             start,
             ending,
         } = self;
+
+        let k = w.inline_start_typical()?;
         w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}{}", start, tag)?;
@@ -587,7 +614,7 @@ impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Elem for Single
         attr.render(&mut w.as_attr_write())?;
         write!(w.writer(), "{}", ending)?;
         w.writer_escapable().write_str(">")?;
-        w.end_tag()?;
+        w.inline_finish(k)?;
         Ok(())
     }
 }
@@ -603,49 +630,22 @@ impl<D: fmt::Display> Single<D, (), &'static str, &'static str> {
     }
 }
 
-///
-/// The tail of an element
-///
-#[derive(Copy, Clone)]
-#[must_use]
-pub struct ElementTail<D> {
-    tag: D,
-}
-
-impl<D: fmt::Display> ElemTail for ElementTail<D> {
-    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
-        w.pop();
-
-        //w.end_tag()?;
-        w.tabs()?;
-
-        w.writer_escapable().write_str("</")?;
-        write!(w.writer(), "{}", &self.tag)?;
-        w.writer_escapable().write_char('>')?;
-        w.end_tag()?;
-
-        Ok(())
-    }
-}
-
 pub struct InlinerTail<K: ElemTail> {
-    reset: bool,
+    sigl: InlineSigl,
     tail: K,
 }
 
 impl<D: ElemTail> ElemTail for InlinerTail<D> {
     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
         self.tail.render(w.borrow_mut2())?;
-
-        if self.reset {
-            w.set_inline_mode(false);
-            w.end_tag()?;
-        }
+        w.inline_finish(self.sigl)?;
 
         Ok(())
     }
 }
 
+//If inline() is called on all elements inside of an element,
+//then they will all be inlined. If just one is, it will have no effect.
 #[derive(Copy, Clone)]
 #[must_use]
 pub struct Inliner<E> {
@@ -655,16 +655,12 @@ impl<E> Locked for Inliner<E> {}
 impl<E: Elem> Elem for Inliner<E> {
     type Tail = InlinerTail<E::Tail>;
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        let reset = if w.is_inline_mode() {
-            false
-        } else {
-            w.tabs()?;
-            w.set_inline_mode(true);
-            true
-        };
+        //dbg!("inliner start");
+        let sigl = w.inline_start_inline()?;
+
         let tail = self.elem.render_head(w)?;
 
-        Ok(InlinerTail { reset, tail })
+        Ok(InlinerTail { sigl, tail })
     }
 }
 
@@ -696,17 +692,15 @@ impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
     type Tail = ElementTail<D>;
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
         let Element { tag, attr } = self;
+        let sigl = w.inline_start_typical()?;
+
         w.tabs()?;
         w.writer_escapable().write_char('<')?;
         write!(w.writer(), "{}", tag)?;
         //w.writer().write_char(' ')?;
         attr.render(&mut w.as_attr_write())?;
         w.writer_escapable().write_str(">")?;
-
-        w.end_tag()?;
-
-        w.push();
-        Ok(ElementTail { tag })
+        Ok(ElementTail { tag, sigl })
     }
 }
 impl<D: fmt::Display> Element<D, ()> {
@@ -716,56 +710,81 @@ impl<D: fmt::Display> Element<D, ()> {
 }
 
 ///
-/// A string buffered element
-///
-/// If you need to render something over, and over again,
-/// you can instead buffer it to a string using this struct
-/// for better performance at the cost of more memory.
-///
-/// Notice that RenderElem is only implemented for a &BufferedElem.
+/// The tail of an element
 ///
 #[derive(Clone)]
-pub struct BufferedElem {
-    head: String,
-    tail: String,
+#[must_use]
+pub struct ElementTail<D> {
+    sigl: InlineSigl,
+    tag: D,
 }
 
-impl BufferedElem {
-    pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
-        let mut head = String::new();
-        let mut tail = String::new();
-        let t = elem.render_head(ElemWrite(WriteWrap(&mut head), &mut fmt))?;
-        t.render(ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
-        head.shrink_to_fit();
-        tail.shrink_to_fit();
-        Ok(BufferedElem { head, tail })
-    }
-
-    pub fn into_parts(self) -> (String, String) {
-        (self.head, self.tail)
-    }
-}
-
-///
-/// A buffered element's tail
-///
-pub struct BufferedTail<'a> {
-    tail: &'a str,
-}
-impl<'a> ElemTail for BufferedTail<'a> {
+impl<D: fmt::Display> ElemTail for ElementTail<D> {
     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
-        write!(w.writer_escapable(), "{}", self.tail)
-    }
-}
-impl<'a> Locked for &'a BufferedElem {}
+        //TODO need to restart here???
+        w.reset_for_tail()?;
+        w.tabs()?;
+        w.writer_escapable().write_str("</")?;
+        write!(w.writer(), "{}", &self.tag)?;
+        w.writer_escapable().write_char('>')?;
 
-impl<'a> Elem for &'a BufferedElem {
-    type Tail = BufferedTail<'a>;
-    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        write!(w.writer_escapable(), "{}", self.head)?;
-        Ok(BufferedTail { tail: &self.tail })
+        w.inline_finish(self.sigl)?;
+
+        Ok(())
     }
 }
+
+// ///
+// /// A string buffered element
+// ///
+// /// If you need to render something over, and over again,
+// /// you can instead buffer it to a string using this struct
+// /// for better performance at the cost of more memory.
+// ///
+// /// Notice that RenderElem is only implemented for a &BufferedElem.
+// ///
+// #[derive(Clone)]
+// pub struct BufferedElem {
+//     head: String,
+//     tail: String,
+// }
+
+// impl BufferedElem {
+//     pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
+//         let mut head = String::new();
+//         let mut tail = String::new();
+//         let t = elem.render_head(ElemWrite(WriteWrap(&mut head), &mut fmt))?;
+//         t.render(ElemWrite(WriteWrap(&mut tail), &mut fmt))?;
+//         head.shrink_to_fit();
+//         tail.shrink_to_fit();
+//         Ok(BufferedElem { head, tail })
+//     }
+
+//     pub fn into_parts(self) -> (String, String) {
+//         (self.head, self.tail)
+//     }
+// }
+
+// ///
+// /// A buffered element's tail
+// ///
+// pub struct BufferedTail<'a> {
+//     tail: &'a str,
+// }
+// impl<'a> ElemTail for BufferedTail<'a> {
+//     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
+//         write!(w.writer_escapable(), "{}", self.tail)
+//     }
+// }
+// impl<'a> Locked for &'a BufferedElem {}
+
+// impl<'a> Elem for &'a BufferedElem {
+//     type Tail = BufferedTail<'a>;
+//     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+//         write!(w.writer_escapable(), "{}", self.head)?;
+//         Ok(BufferedTail { tail: &self.tail })
+//     }
+// }
 
 impl ElemTail for () {
     fn render(self, _: ElemWrite) -> std::fmt::Result {

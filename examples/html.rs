@@ -27,22 +27,21 @@ animation: mymove 5s infinite;
                 if i % 2 == 0 {
                     let columns = elems!(
                         build::elem("th")
-                            .inline()
-                            .append(build::raw(format_move!("Hay {}:1", i))),
+                            .append(build::raw(format_move!("Hay {}:1", i))).inline(),
                         build::elem("th")
-                            .inline()
-                            .append(build::raw(format_move!("Hay {}:2", i))),
+                            
+                            .append(build::raw(format_move!("Hay {}:2", i))).inline(),
                         build::elem("th")
-                            .inline()
-                            .append(build::raw(format_move!("Hay {}:3", i)))
+                            
+                            .append(build::raw(format_move!("Hay {}:3", i))).inline()
                     );
 
-                    w.put(build::elem("tr").inline().append(columns))?;
+                    w.put(build::elem("tr").append(columns))?;
                 } else {
                     let column = build::elem("th")
-                        .inline()
-                        .append(build::raw(format_move!("Hay {}:1", i)));
-                    w.put(build::elem("tr").inline().append(column))?;
+                        
+                        .append(build::raw(format_move!("Hay {}:1", i))).inline();
+                    w.put(build::elem("tr").append(column))?;
                 }
                 Ok(w)
             })
@@ -52,8 +51,5 @@ animation: mymove 5s infinite;
 
     let all = html.append(style).append(table);
 
-    use hypermelon::render::*;
-    Renderer::new()
-        .with_fmt(PrettyFmt::new().with_tab(" "))
-        .render(all, hypermelon::stdout_fmt())
+    hypermelon::render(all,hypermelon::stdout_fmt())
 }

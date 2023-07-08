@@ -12,9 +12,7 @@ fn main() -> std::fmt::Result {
         )))?;
 
         w.put(
-            build::elem("style")
-                .append(".test{fill:none;stroke:white;stroke-width:3}")
-                .inline(),
+            build::elem("style").append(".test{fill:none;stroke:white;stroke-width:3}".inline()),
         )?;
 
         w.put(build::single("rect").with(attrs!(

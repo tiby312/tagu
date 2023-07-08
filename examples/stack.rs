@@ -5,14 +5,14 @@ fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
         let a = build::elem("a2");
         let b = build::elem("b2");
-        let c = build::elem("c2");
+        let c = build::elem("c2").inline();
 
         let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
-        for i in 0..5 {
-            let e = build::elem(format_move!("x2:{}", i)).inline();
-            stack.put(e)?;
-        }
+        stack.put(build::elem(format_move!("x2:{}", 1)))?;
+        stack.put(build::elem(format_move!("x2:{}", 2)))?;
+        stack.put(build::elem(format_move!("x2:{}", 3)))?;
+
         stack.pop()?.pop()?.pop()
     });
 

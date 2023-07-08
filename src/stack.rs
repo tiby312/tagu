@@ -71,6 +71,14 @@ impl<'a, T> ElemStackEscapable<'a, T> {
         }
     }
 
+    pub fn render_head_escapable<E: Elem>(&mut self, e: E) -> Result<E::Tail, fmt::Error> {
+        e.render_head(self.writer.borrow_mut2())
+    }
+
+    pub fn render_tail_escapable<E: ElemTail>(&mut self, e: E) -> Result<(), fmt::Error> {
+        e.render(self.writer.borrow_mut2())
+    }
+
     pub fn writer_escapable(&mut self) -> WriteWrap {
         self.writer.writer_escapable()
     }
