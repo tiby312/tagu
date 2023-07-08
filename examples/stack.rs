@@ -16,5 +16,5 @@ fn main() -> std::fmt::Result {
         stack.pop()?.pop()?.pop()
     });
 
-    hypermelon::render(all, hypermelon::stdout_fmt())
+    hypermelon::render(all.swap_tab("→"), hypermelon::stdout_fmt())
 }

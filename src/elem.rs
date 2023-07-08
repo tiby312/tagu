@@ -2,12 +2,14 @@
 //! Elem trait and building blocks
 //!
 
+use crate::render::PrettyFmt;
+
 use super::*;
 
 ///
 /// Writer struct passed to escapable closure elem
 ///
-pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
+pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut PrettyFmt);
 
 impl<'a> ElemWriteEscapable<'a> {
     pub fn borrow_mut2(&mut self) -> ElemWriteEscapable {
@@ -61,7 +63,7 @@ impl<'a> ElemWriteEscapable<'a> {
 /// Writer struct passed to closure elem
 ///
 #[must_use]
-pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut dyn render::Fmt);
+pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut PrettyFmt);
 
 impl<'a> ElemWrite<'a> {
     pub(crate) fn borrow_mut2(&mut self) -> ElemWrite {
@@ -90,6 +92,12 @@ impl<'a> ElemWrite<'a> {
             elem,
             writer: self.borrow_mut2(),
         }
+    }
+
+    pub fn swap_tab_type(&mut self,newt:&'static str)->&'static str{
+        let ret=self.1.tab_char;
+        self.1.tab_char=newt;
+        ret
     }
 
     #[deprecated(note = "use hypermelon::session")]
@@ -266,6 +274,10 @@ pub trait Elem {
         Self: Sized,
     {
         Inliner { elem: self }
+    }
+
+    fn swap_tab(self,new_tab:&'static str)->SwapTab<Self> where Self:Sized{
+        SwapTab{elem:self,new_tab}
     }
 
     fn some(self) -> Option<Self>
@@ -668,6 +680,40 @@ impl<E: Elem> Elem for Inliner<E> {
     }
 }
 
+
+pub struct SwapTabTail<T>{
+    tail:T,
+    original:&'static str
+}
+impl<T:ElemTail> ElemTail for SwapTabTail<T>{
+    fn render(self, mut w: ElemWrite) -> std::fmt::Result {
+        self.tail.render(w.borrow_mut2())?;
+        
+        let _ = w.swap_tab_type(self.original);
+        
+        
+        Ok(())
+    }
+}
+pub struct SwapTab<E>{
+    new_tab:&'static str,
+    elem:E
+}
+impl<E> Locked for SwapTab<E> {}
+impl<E: Elem> Elem for SwapTab<E> {
+    type Tail = SwapTabTail<E::Tail>;
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        
+        let original=w.swap_tab_type(self.new_tab);
+        let tail = self.elem.render_head(w.borrow_mut2())?;
+
+        
+        Ok(SwapTabTail { original, tail })
+    }
+}
+
+
+
 ///
 /// A regular element with an ending tag
 ///
@@ -731,7 +777,7 @@ pub struct BufferedElem {
 }
 
 impl BufferedElem {
-    pub fn new<E: Elem + Locked, F: render::Fmt>(elem: E, mut fmt: F) -> Result<Self, fmt::Error> {
+    pub fn new<E: Elem + Locked>(elem: E, mut fmt: PrettyFmt) -> Result<Self, fmt::Error> {
         let mut head = String::new();
         let mut tail = String::new();
         let t = elem.render_head(ElemWrite(WriteWrap(&mut head), &mut fmt))?;
