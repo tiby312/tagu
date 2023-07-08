@@ -52,5 +52,5 @@ animation: mymove 5s infinite;
 
     let all = html.append(style).append(table);
 
-    hypermelon::render(all.swap_tab(" "),hypermelon::stdout_fmt())
+    hypermelon::render(all.with_tab(" "),hypermelon::stdout_fmt())
 }
