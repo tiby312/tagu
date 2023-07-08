@@ -71,9 +71,9 @@ impl<'a, T> ElemStackEscapable<'a, T> {
         }
     }
 
-    // pub fn writer_escapable(&mut self)->WriteWrap{
-    //     self.writer.as_escapable().writer_escapable()
-    // }
+    pub fn writer_escapable(&mut self) -> WriteWrap {
+        self.writer.writer_escapable()
+    }
 }
 
 impl<'a, P: Pop> ElemStackEscapable<'a, P> {

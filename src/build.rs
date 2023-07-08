@@ -77,7 +77,7 @@ where
     Sess::new(func)
 }
 
-pub fn from_stack_escpable<F>(func: F) -> SessEscapable<F>
+pub fn from_stack_escapable<F>(func: F) -> SessEscapable<F>
 where
     F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
 {
