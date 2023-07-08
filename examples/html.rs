@@ -52,5 +52,5 @@ animation: mymove 5s infinite;
 
     let all = html.append(style).append(table);
 
-    tagu::render(all.with_tab(" "),tagu::stdout_fmt())
+    tagu::render(all.with_tab(" "), tagu::stdout_fmt())
 }

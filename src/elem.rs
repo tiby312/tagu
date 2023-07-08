@@ -94,9 +94,9 @@ impl<'a> ElemWrite<'a> {
         }
     }
 
-    fn swap_tab_type(&mut self,newt:&'static str)->&'static str{
-        let ret=self.1.tab_char;
-        self.1.tab_char=newt;
+    fn swap_tab_type(&mut self, newt: &'static str) -> &'static str {
+        let ret = self.1.tab_char;
+        self.1.tab_char = newt;
         ret
     }
 
@@ -276,8 +276,14 @@ pub trait Elem {
         Inliner { elem: self }
     }
 
-    fn with_tab(self,new_tab:&'static str)->WithTab<Self> where Self:Sized{
-        WithTab{elem:self,new_tab}
+    fn with_tab(self, new_tab: &'static str) -> WithTab<Self>
+    where
+        Self: Sized,
+    {
+        WithTab {
+            elem: self,
+            new_tab,
+        }
     }
 
     fn some(self) -> Option<Self>
@@ -680,39 +686,33 @@ impl<E: Elem> Elem for Inliner<E> {
     }
 }
 
-
-pub struct WithTabTail<T>{
-    tail:T,
-    original:&'static str
+pub struct WithTabTail<T> {
+    tail: T,
+    original: &'static str,
 }
-impl<T:ElemTail> ElemTail for WithTabTail<T>{
+impl<T: ElemTail> ElemTail for WithTabTail<T> {
     fn render(self, mut w: ElemWrite) -> std::fmt::Result {
         self.tail.render(w.borrow_mut2())?;
-        
+
         let _ = w.swap_tab_type(self.original);
-        
-        
+
         Ok(())
     }
 }
-pub struct WithTab<E>{
-    new_tab:&'static str,
-    elem:E
+pub struct WithTab<E> {
+    new_tab: &'static str,
+    elem: E,
 }
 impl<E> Locked for WithTab<E> {}
 impl<E: Elem> Elem for WithTab<E> {
     type Tail = WithTabTail<E::Tail>;
     fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        
-        let original=w.swap_tab_type(self.new_tab);
+        let original = w.swap_tab_type(self.new_tab);
         let tail = self.elem.render_head(w.borrow_mut2())?;
 
-        
         Ok(WithTabTail { original, tail })
     }
 }
-
-
 
 ///
 /// A regular element with an ending tag

@@ -1,7 +1,7 @@
+use std::fmt;
 use tagu::build;
 use tagu::prelude::*;
 use tagu::stack::ElemStack;
-use std::fmt;
 
 fn func<T>(stack: ElemStack<T>) -> Result<ElemStack<T>, fmt::Error> {
     let a = build::elem("a2");
