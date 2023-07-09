@@ -74,16 +74,6 @@ impl PrettyFmt {
     }
 }
 impl PrettyFmt {
-    pub fn with_tab(self, tab: &'static str) -> PrettyFmt {
-        PrettyFmt {
-            tabs: self.tabs,
-            tab_char: tab,
-            inline: self.inline,
-        }
-    }
-}
-
-impl PrettyFmt {
     pub fn set_inline_mode(&mut self, val: bool) {
         self.inline = val;
     }
