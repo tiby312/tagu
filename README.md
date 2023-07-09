@@ -188,7 +188,3 @@ chain will not implement `Locked`. Instead the user would have to use `render_es
 
 I left the tagger crate alone and made this into a brand new crate because while it does have all
 the functionality of tagger, it is more complicated. Some people might just like the simplicity of tagger. However, I recommend people choose tagu over tagger, because I think its a lot more flexible. The ability to pass around element chains like structs is really useful in my experience.
-
-### Name origin?
-
-So its not easy to find crate names these days. A lot of good ones are taken. This one started out as ht-melon because it has "html" in the name, but it just looked jarring in the code everywhere so I changed it to tagu.
