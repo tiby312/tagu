@@ -7,7 +7,7 @@ fn main() -> std::fmt::Result {
         .with_ending("")
         .chain(build::elem("html"));
 
-    let style = build::elem("style").append(
+    let style = build::elem("style").append(build::raw(
         "table, th, td {
 border: 1px solid black;
 border-collapse: collapse;
@@ -17,7 +17,7 @@ animation: mymove 5s infinite;
     from {background-color: red;}
     to {background-color: blue;}
 }",
-    );
+    ));
 
     let table = {
         let table = build::elem("table").with(("style", format_move!("width:{}%", 100)));

@@ -514,13 +514,13 @@ impl<D: fmt::Display> Elem for Raw<D> {
     }
 }
 
-impl<'a> Locked for &'a str {}
-impl<'a> Elem for &'a str {
-    type Tail = ();
-    fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
-        Raw::new(self).render_head(w)
-    }
-}
+// impl<'a> Locked for &'a str {}
+// impl<'a> Elem for &'a str {
+//     type Tail = ();
+//     fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+//         Raw::new(self).render_head(w)
+//     }
+// }
 
 ///
 /// A raw escapable element

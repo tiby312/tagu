@@ -13,7 +13,7 @@ fn main() -> std::fmt::Result {
 
         w.put(
             build::elem("style")
-                .append(".test{fill:none;stroke:white;stroke-width:3}")
+                .append(build::raw(".test{fill:none;stroke:white;stroke-width:3}"))
                 .inline(),
         )?;
 
