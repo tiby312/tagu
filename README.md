@@ -100,7 +100,7 @@ fn main() -> std::fmt::Result {
 
     let style = build::elem("style")
         .inline()
-        .append(".test{fill:none;stroke:white;stroke-width:3}");
+        .append(build::raw(".test{fill:none;stroke:white;stroke-width:3}"));
 
     let svg = build::elem("svg").with(attrs!(
         ("xmlns", "http://www.w3.org/2000/svg"),
@@ -131,7 +131,6 @@ fn main() -> std::fmt::Result {
 
     tagu::render(all, tagu::stdout_fmt())
 }
-
 ```
 
 ### Output

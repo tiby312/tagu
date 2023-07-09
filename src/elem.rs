@@ -778,7 +778,7 @@ pub struct BufferedElem {
 
 impl BufferedElem {
     pub fn new<E: Elem + Locked>(elem: E) -> Result<Self, fmt::Error> {
-        let mut fmt=crate::render::PrettyFmt::new();
+        let mut fmt = crate::render::PrettyFmt::new();
         let mut head = String::new();
         let mut tail = String::new();
         let t = elem.render_head(ElemWrite(WriteWrap(&mut head), &mut fmt))?;
