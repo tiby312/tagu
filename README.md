@@ -11,10 +11,10 @@ use tagu::build;
 use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
-    let a = build::elem("a1");
-    let b = build::elem("b1");
-    let c = build::elem("c1");
-    let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x1:{}", i)).inline()));
+    let a = build::elem("a");
+    let b = build::elem("b");
+    let c = build::elem("c");
+    let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
     let all = a.append(b.append(c.append(it)));
 
     tagu::render(all, tagu::stdout_fmt())
@@ -24,17 +24,17 @@ fn main() -> std::fmt::Result {
 
 ### Output Text:
 ```html
-<a1>
-    <b1>
-        <c1>
-            <x1:0></x1:0>
-            <x1:1></x1:1>
-            <x1:2></x1:2>
-            <x1:3></x1:3>
-            <x1:4></x1:4>
-        </c1>
-    </b1>
-</a1>
+<a>
+    <b>
+        <c>
+            <x0></x0>
+            <x1></x1>
+            <x2></x2>
+            <x3></x3>
+            <x4></x4>
+        </c>
+    </b>
+</a>
 ```
 
 ## Stack Example
@@ -45,14 +45,14 @@ use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
-        let a = build::elem("a2");
-        let b = build::elem("b2");
-        let c = build::elem("c2").with_tab("→");
+        let a = build::elem("a");
+        let b = build::elem("b");
+        let c = build::elem("c").with_tab("→");
 
         let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
         for i in 0..5 {
-            let e = build::elem(format_move!("x2:{}", i)).inline();
+            let e = build::elem(format_move!("x{}", i)).inline();
             stack.put(e)?;
         }
         stack.pop()?.pop()?.pop()
@@ -65,17 +65,17 @@ fn main() -> std::fmt::Result {
 
 ### Output Text:
 ```html
-<a2>
- <b2>
-→→<c2>
-→→→<x2:0></x2:0>
-→→→<x2:1></x2:1>
-→→→<x2:2></x2:2>
-→→→<x2:3></x2:3>
-→→→<x2:4></x2:4>
-→→</c2>
- </b2>
-</a2>
+<a>
+ <b>
+→→<c>
+→→→<x0></x0>
+→→→<x1></x1>
+→→→<x2></x2>
+→→→<x3></x3>
+→→→<x4></x4>
+→→</c>
+ </b>
+</a>
 ```
 
 ### SVG Example
