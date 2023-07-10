@@ -5,7 +5,7 @@ fn main() -> std::fmt::Result {
     let all = build::from_stack(|stack| {
         let a = build::elem("a");
         let b = build::elem("b");
-        let c = build::elem("c").with_tab("→");
+        let c = build::elem("c").with(("pop",5)).with(("k",5)).with_tab("→");
 
         let mut stack = stack.push(a)?.push(b)?.push(c)?;
 

@@ -560,18 +560,15 @@ pub struct Single<D, A, K, Z> {
 }
 impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Locked for Single<D, A, K, Z> {}
 impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AA, K, Z> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AttrChain<A,AA>, K, Z> {
         Single {
             tag: self.tag,
-            attr,
+            attr:self.attr.chain(attr),
             ending: self.ending,
             start: self.start,
         }
     }
-    pub fn with_map<AA: Attr, F: FnOnce() -> AA>(self, attr: F) -> Single<D, AA, K, Z> {
-        let attr = attr();
-        self.with(attr)
-    }
+    
     pub fn with_ending<ZZ: fmt::Display>(self, ending: ZZ) -> Single<D, A, K, ZZ> {
         Single {
             tag: self.tag,
@@ -727,15 +724,11 @@ pub struct Element<D, A> {
 impl<D: fmt::Display, A: Attr> Locked for Element<D, A> {}
 
 impl<D: fmt::Display, A: Attr> Element<D, A> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AA> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AttrChain<A,AA>> {
         Element {
             tag: self.tag,
-            attr,
+            attr:self.attr.chain(attr),
         }
-    }
-    pub fn with_map<AA: Attr, F: FnOnce() -> AA>(self, attr: F) -> Element<D, AA> {
-        let attr = attr();
-        self.with(attr)
     }
 }
 impl<D: fmt::Display, A: Attr> Elem for Element<D, A> {
