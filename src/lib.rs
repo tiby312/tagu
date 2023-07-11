@@ -22,6 +22,13 @@ pub mod prelude {
     pub use super::format_move;
 }
 
+pub mod util {
+    use super::*;
+    pub fn comment(a: impl fmt::Display) -> impl Elem + Locked {
+        build::single(a).with_start("!--").with_ending("--")
+    }
+}
+
 ///
 /// Render elements to a writer
 ///

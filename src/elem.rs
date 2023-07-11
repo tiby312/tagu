@@ -265,6 +265,16 @@ pub trait Elem {
         Append { top: self, bottom }
     }
 
+    fn append_with<F: FnOnce() -> R, R: Elem>(self, func: F) -> AppendWith<Self, F>
+    where
+        Self: Sized,
+    {
+        AppendWith {
+            top: self,
+            bottom: func,
+        }
+    }
+
     ///
     /// Force this element and descendants to be written out
     /// inline.
@@ -298,6 +308,25 @@ pub trait Elem {
 /// Indicates that the implementor does that allow arbitrary html escaping.
 ///
 pub trait Locked {}
+
+#[must_use]
+#[derive(Copy, Clone)]
+pub struct AppendWith<A, B> {
+    top: A,
+    bottom: B,
+}
+
+impl<A: Locked, B: FnOnce() -> C, C: Locked> Locked for AppendWith<A, B> {}
+
+impl<A: Elem, B: FnOnce() -> K, K: Elem> Elem for AppendWith<A, B> {
+    type Tail = A::Tail;
+    fn render_head(self, mut w: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        let AppendWith { top, bottom } = self;
+        let tail = top.render_head(w.borrow_mut2())?;
+        w.render_inner(bottom())?;
+        Ok(tail)
+    }
+}
 
 ///
 /// Append an element to another adaptor
@@ -560,15 +589,15 @@ pub struct Single<D, A, K, Z> {
 }
 impl<D: fmt::Display, A: Attr, K: fmt::Display, Z: fmt::Display> Locked for Single<D, A, K, Z> {}
 impl<D: fmt::Display, A: Attr, K, Z> Single<D, A, K, Z> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AttrChain<A,AA>, K, Z> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Single<D, AttrChain<A, AA>, K, Z> {
         Single {
             tag: self.tag,
-            attr:self.attr.chain(attr),
+            attr: self.attr.chain(attr),
             ending: self.ending,
             start: self.start,
         }
     }
-    
+
     pub fn with_ending<ZZ: fmt::Display>(self, ending: ZZ) -> Single<D, A, K, ZZ> {
         Single {
             tag: self.tag,
@@ -724,10 +753,10 @@ pub struct Element<D, A> {
 impl<D: fmt::Display, A: Attr> Locked for Element<D, A> {}
 
 impl<D: fmt::Display, A: Attr> Element<D, A> {
-    pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AttrChain<A,AA>> {
+    pub fn with<AA: Attr>(self, attr: AA) -> Element<D, AttrChain<A, AA>> {
         Element {
             tag: self.tag,
-            attr:self.attr.chain(attr),
+            attr: self.attr.chain(attr),
         }
     }
 }

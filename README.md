@@ -78,6 +78,56 @@ fn main() -> std::fmt::Result {
 </a>
 ```
 
+### Adaptor2 Example
+
+```rust
+use tagu::build;
+use tagu::prelude::*;
+
+fn main() -> std::fmt::Result {
+    let all = build::elem("a").append_with(|| {
+        elems!(
+            build::single("test"),
+            build::elem("b").append_with(|| {
+                let it =
+                    build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
+
+                build::elem("c").append_with(|| it)
+            }),
+            build::elem("bbbb").append_with(|| {
+                elems!(
+                    tagu::util::comment("this is comment"),
+                    build::single("k").with(("apple", 5))
+                )
+            })
+        )
+    });
+
+    tagu::render(all, tagu::stdout_fmt())
+}
+```
+
+### Output
+
+```html
+<a>
+    <test/>
+    <b>
+        <c>
+            <x0></x0>
+            <x1></x1>
+            <x2></x2>
+            <x3></x3>
+            <x4></x4>
+        </c>
+    </b>
+    <bbbb>
+        <!--this is comment-->
+        <k apple="5"/>
+    </bbbb>
+</a>
+```
+
 ### SVG Example
 
 ```rust
