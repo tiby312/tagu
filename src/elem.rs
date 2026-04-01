@@ -12,13 +12,13 @@ use super::*;
 pub struct ElemWriteEscapable<'a>(WriteWrap<'a>, pub(crate) &'a mut PrettyFmt);
 
 impl<'a> ElemWriteEscapable<'a> {
-    pub fn borrow_mut2(&mut self) -> ElemWriteEscapable {
+    pub fn borrow_mut2(&mut self) -> ElemWriteEscapable<'_> {
         ElemWriteEscapable(self.0.borrow_mut(), self.1)
     }
-    pub fn writer_escapable(&mut self) -> WriteWrap {
+    pub fn writer_escapable(&mut self) -> WriteWrap<'_> {
         self.0.borrow_mut()
     }
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap<'_>> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
@@ -27,7 +27,7 @@ impl<'a> ElemWriteEscapable<'a> {
         let tail = elem.render_head(self.as_elem_write())?;
         tail.render(self.as_elem_write())
     }
-    fn as_elem_write(&mut self) -> ElemWrite {
+    fn as_elem_write(&mut self) -> ElemWrite<'_> {
         ElemWrite(WriteWrap(self.0 .0), self.1)
     }
 
@@ -66,11 +66,11 @@ impl<'a> ElemWriteEscapable<'a> {
 pub struct ElemWrite<'a>(pub(crate) WriteWrap<'a>, pub(crate) &'a mut PrettyFmt);
 
 impl<'a> ElemWrite<'a> {
-    pub(crate) fn borrow_mut2(&mut self) -> ElemWrite {
+    pub(crate) fn borrow_mut2(&mut self) -> ElemWrite<'_> {
         ElemWrite(self.0.borrow_mut(), self.1)
     }
 
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap<'_>> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
@@ -133,14 +133,14 @@ impl<'a> ElemWrite<'a> {
         self.1.end_tag(&mut self.0)
     }
 
-    pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable {
+    pub(crate) fn as_escapable(&mut self) -> ElemWriteEscapable<'_> {
         ElemWriteEscapable(WriteWrap(self.0 .0), self.1)
     }
-    pub(crate) fn writer_escapable(&mut self) -> WriteWrap {
+    pub(crate) fn writer_escapable(&mut self) -> WriteWrap<'_> {
         self.0.borrow_mut()
     }
 
-    fn as_attr_write(&mut self) -> AttrWrite {
+    fn as_attr_write(&mut self) -> AttrWrite<'_> {
         attr::AttrWrite::new(self.0.borrow_mut())
     }
 

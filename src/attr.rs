@@ -72,11 +72,11 @@ impl<'a> AttrWrite<'a> {
     pub fn render<E: Attr>(&mut self, attr: E) -> fmt::Result {
         attr.render(self)
     }
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap<'_>> {
         tools::escape_guard(self.0.borrow_mut())
     }
 
-    fn writer_escapable(&mut self) -> WriteWrap {
+    fn writer_escapable(&mut self) -> WriteWrap<'_> {
         self.0.borrow_mut()
     }
 }

@@ -34,7 +34,7 @@ impl<'a, T> ElemStack<'a, T> {
         self.0.push(elem).map(|a| ElemStack(a))
     }
 
-    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap> {
+    pub fn writer(&mut self) -> tools::EscapeGuard<WriteWrap<'_>> {
         self.0.writer.writer()
     }
 }
@@ -71,7 +71,7 @@ impl<'a, T> ElemStackEscapable<'a, T> {
         }
     }
 
-    pub fn writer_escapable(&mut self) -> WriteWrap {
+    pub fn writer_escapable(&mut self) -> WriteWrap<'_> {
         self.writer.writer_escapable()
     }
 }

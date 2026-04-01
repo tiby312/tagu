@@ -121,7 +121,7 @@ impl<F: Fn(&mut fmt::Formatter) -> fmt::Result> fmt::Display for DisplayableClos
 pub struct WriteWrap<'a>(pub &'a mut dyn fmt::Write);
 
 impl<'a> WriteWrap<'a> {
-    pub fn borrow_mut(&mut self) -> WriteWrap {
+    pub fn borrow_mut(&mut self) -> WriteWrap<'_> {
         WriteWrap(self.0)
     }
 }
