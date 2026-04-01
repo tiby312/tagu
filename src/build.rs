@@ -4,6 +4,15 @@
 
 use super::*;
 
+impl Locked for () {}
+impl Elem for () {
+    type Tail = ();
+
+    fn render_head(self, _: ElemWrite) -> Result<Self::Tail, fmt::Error> {
+        Ok(())
+    }
+}
+
 ///
 /// Create an escapable element
 ///
@@ -67,21 +76,6 @@ pub fn from_closure<F: FnOnce(&mut ElemWrite) -> fmt::Result>(func: F) -> Closur
 #[deprecated(note = "use tagu::session")]
 pub fn from_closure2<F: FnOnce() -> E, E: Elem>(func: F) -> Closure2<F> {
     Closure2 { func }
-}
-
-use crate::stack::*;
-pub fn from_stack<F>(func: F) -> Sess<F>
-where
-    F: FnOnce(ElemStack<Sentinel>) -> Result<ElemStack<Sentinel>, fmt::Error>,
-{
-    Sess::new(func)
-}
-
-pub fn from_stack_escapable<F>(func: F) -> SessEscapable<F>
-where
-    F: FnOnce(ElemStackEscapable<Sentinel>) -> Result<ElemStackEscapable<Sentinel>, fmt::Error>,
-{
-    SessEscapable::new(func)
 }
 
 ///

@@ -9,7 +9,7 @@ fn main() -> std::fmt::Result {
                 let it =
                     build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
 
-                build::elem("c").append_with(|| it)
+                build::elem("c").append(it)
             }),
             build::elem("bbbb").append_with(|| {
                 elems!(

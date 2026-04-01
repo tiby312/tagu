@@ -231,21 +231,6 @@ pub trait Elem {
     type Tail: ElemTail;
     fn render_head(self, w: ElemWrite) -> Result<Self::Tail, fmt::Error>;
 
-    #[deprecated]
-    fn render_closure<K>(
-        self,
-        mut w: ElemWrite,
-        func: impl FnOnce(ElemWrite) -> Result<K, fmt::Error>,
-    ) -> Result<K, fmt::Error>
-    where
-        Self: Sized,
-    {
-        let tail = self.render_head(w.borrow_mut2())?;
-        let res = func(w.borrow_mut2())?;
-        tail.render(w)?;
-        Ok(res)
-    }
-
     /// Render all of Self and head of other, store tail of other.
     fn chain<R: Elem>(self, other: R) -> Chain<Self, R>
     where
@@ -265,6 +250,13 @@ pub trait Elem {
         Append { top: self, bottom }
     }
 
+    /// Same as append with the arguments reversed
+    fn insert<R: Elem>(self, top: R) -> Append<R, Self>
+    where
+        Self: Sized,
+    {
+        Append { top, bottom: self }
+    }
     fn append_with<F: FnOnce() -> R, R: Elem>(self, func: F) -> AppendWith<Self, F>
     where
         Self: Sized,

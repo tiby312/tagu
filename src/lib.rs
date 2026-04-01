@@ -10,7 +10,6 @@ pub mod build;
 pub mod elem;
 use attr::*;
 mod render;
-pub mod stack;
 use elem::*;
 use tools::WriteWrap;
 

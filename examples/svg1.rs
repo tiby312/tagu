@@ -24,23 +24,24 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = build::from_stack(|mut f| {
-        for r in (0..50).step_by(5) {
-            if r % 10 == 0 {
-                let c = build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)));
-                f.put(c)?;
-            } else {
-                let r = build::single("rect").with(attrs!(
+    let rows = build::from_iter((0..50).step_by(5).map(|r| {
+        if r % 10 == 0 {
+            elems!(
+                Some(build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))),
+                None
+            )
+        } else {
+            elems!(
+                None,
+                Some(build::single("rect").with(attrs!(
                     ("x", 50 - r),
                     ("y", 50 - r),
                     ("width", r * 2),
                     ("height", r * 2)
-                ));
-                f.put(r)?;
-            }
+                )))
+            )
         }
-        Ok(f)
-    });
+    }));
 
     let table = build::elem("g").with(("class", "test")).append(rows);
 
