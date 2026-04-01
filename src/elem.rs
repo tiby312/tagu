@@ -818,7 +818,7 @@ impl<'a> ElemTail for BufferedTail<'a> {
         write!(w.writer_escapable(), "{}", self.tail)
     }
 }
-impl<'a> Locked for &'a BufferedElem {}
+impl Locked for &BufferedElem {}
 
 impl<'a> Elem for &'a BufferedElem {
     type Tail = BufferedTail<'a>;
