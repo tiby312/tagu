@@ -276,7 +276,6 @@ pub trait Elem {
     }
 
     /// Same as append with the arguments reversed
-    /// Same as append with the arguments reversed
     fn insert<R: Elem>(self, top: R) -> Append<R, Self>
     where
         Self: Sized,
