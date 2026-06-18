@@ -14,10 +14,18 @@ fn main() -> std::fmt::Result {
     let a = build::elem("a");
     let b = build::elem("b");
     let c = build::elem("c");
-    let it = build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
-    let all = a.append(b.append(c.append(it)));
+    let it = (0..5).map(|i| build::elem(format!("x{}", i)).inline());
+    let all = build::from_iter(it).insert(c).insert(b).insert(a);
+    
+    let m = build::from_stack(|s|{
+        let mut s=s.push(build::elem("stack"))?;
+        s.put(build::elem("test").append(build::elem("inner")))?;
+        s.pop()
+    });
 
-    tagu::render(all, tagu::stdout_fmt())
+    let c = tagu::util::comment("this is comment");
+
+    tagu::render(elems!(all,m,c), tagu::stdout_fmt())
 }
 
 ```
@@ -25,16 +33,23 @@ fn main() -> std::fmt::Result {
 ### Output Text:
 ```html
 <a>
-    <b>
-        <c>
-            <x0></x0>
-            <x1></x1>
-            <x2></x2>
-            <x3></x3>
-            <x4></x4>
-        </c>
-    </b>
+        <b>
+                <c>
+                        <x0></x0>
+                        <x1></x1>
+                        <x2></x2>
+                        <x3></x3>
+                        <x4></x4>
+                </c>
+        </b>
 </a>
+<stack>
+        <test>
+                <inner>
+                </inner>
+        </test>
+</stack>
+<!--this is comment-->
 ```
 
 ## Stack Example
@@ -78,55 +93,6 @@ fn main() -> std::fmt::Result {
 </a>
 ```
 
-### Adaptor2 Example
-
-```rust
-use tagu::build;
-use tagu::prelude::*;
-
-fn main() -> std::fmt::Result {
-    let all = build::elem("a").append_with(|| {
-        elems!(
-            build::single("test"),
-            build::elem("b").append_with(|| {
-                let it =
-                    build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
-
-                build::elem("c").append_with(|| it)
-            }),
-            build::elem("bbbb").append_with(|| {
-                elems!(
-                    tagu::util::comment("this is comment"),
-                    build::single("k").with(("apple", 5))
-                )
-            })
-        )
-    });
-
-    tagu::render(all, tagu::stdout_fmt())
-}
-```
-
-### Output
-
-```html
-<a>
-    <test/>
-    <b>
-        <c>
-            <x0></x0>
-            <x1></x1>
-            <x2></x2>
-            <x3></x3>
-            <x4></x4>
-        </c>
-    </b>
-    <bbbb>
-        <!--this is comment-->
-        <k apple="5"/>
-    </bbbb>
-</a>
-```
 
 ### SVG Example
 
