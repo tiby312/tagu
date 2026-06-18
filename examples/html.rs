@@ -23,26 +23,29 @@ animation: mymove 5s infinite;
         let table = build::elem("table").with(("style", format_move!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
-            if i % 2 == 0 {
-                let columns = elems!(
-                    build::elem("th")
-                        .inline()
-                        .append(build::raw(format_move!("Hay {}:1", i))),
-                    build::elem("th")
-                        .inline()
-                        .append(build::raw(format_move!("Hay {}:2", i))),
-                    build::elem("th")
-                        .inline()
-                        .append(build::raw(format_move!("Hay {}:3", i)))
-                );
+            build::from_stack(move |mut w| {
+                if i % 2 == 0 {
+                    let columns = elems!(
+                        build::elem("th")
+                            .inline()
+                            .append(build::raw(format_move!("Hay {}:1", i))),
+                        build::elem("th")
+                            .inline()
+                            .append(build::raw(format_move!("Hay {}:2", i))),
+                        build::elem("th")
+                            .inline()
+                            .append(build::raw(format_move!("Hay {}:3", i)))
+                    );
 
-                elems!(Some(build::elem("tr").inline().append(columns)), None)
-            } else {
-                let column = build::elem("th")
-                    .inline()
-                    .append(build::raw(format_move!("Hay {}:1", i)));
-                elems!(None, Some(build::elem("tr").inline().append(column)))
-            }
+                    w.put(build::elem("tr").inline().append(columns))?;
+                } else {
+                    let column = build::elem("th")
+                        .inline()
+                        .append(build::raw(format_move!("Hay {}:1", i)));
+                    w.put(build::elem("tr").inline().append(column))?;
+                }
+                Ok(w)
+            })
         });
         table.append(build::from_iter(rows))
     };
