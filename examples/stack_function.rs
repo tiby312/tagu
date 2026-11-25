@@ -11,7 +11,7 @@ fn func<T>(stack: ElemStack<T>) -> Result<ElemStack<T>, fmt::Error> {
     let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
     for i in 0..5 {
-        let e = build::elem(format_move!("x2:{}", i)).inline();
+        let e = build::elem(format!("x2:{}", i)).inline();
         stack.put(e)?;
     }
     stack.pop()?.pop()?.pop()

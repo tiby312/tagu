@@ -19,7 +19,6 @@ pub mod prelude {
     pub use super::attrs;
     pub use super::elem::Elem;
     pub use super::elems;
-    pub use super::format_move;
 }
 
 pub mod util {

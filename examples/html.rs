@@ -20,7 +20,7 @@ animation: mymove 5s infinite;
     ));
 
     let table = {
-        let table = build::elem("table").with(("style", format_move!("width:{}%", 100)));
+        let table = build::elem("table").with(("style", format!("width:{}%", 100)));
 
         let rows = (0..20).map(|i| {
             build::from_stack(move |mut w| {
@@ -28,20 +28,20 @@ animation: mymove 5s infinite;
                     let columns = elems!(
                         build::elem("th")
                             .inline()
-                            .append(build::raw(format_move!("Hay {}:1", i))),
+                            .append(build::raw(format!("Hay {}:1", i))),
                         build::elem("th")
                             .inline()
-                            .append(build::raw(format_move!("Hay {}:2", i))),
+                            .append(build::raw(format!("Hay {}:2", i))),
                         build::elem("th")
                             .inline()
-                            .append(build::raw(format_move!("Hay {}:3", i)))
+                            .append(build::raw(format!("Hay {}:3", i)))
                     );
 
                     w.put(build::elem("tr").inline().append(columns))?;
                 } else {
                     let column = build::elem("th")
                         .inline()
-                        .append(build::raw(format_move!("Hay {}:1", i)));
+                        .append(build::raw(format!("Hay {}:1", i)));
                     w.put(build::elem("tr").inline().append(column))?;
                 }
                 Ok(w)

@@ -80,17 +80,6 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
 }
 
 ///
-/// Similar to `std::format_args!()` except has a more flexible lifetime.
-/// Shorthand for `disp_const(move |w|write!(w,...))`
-///
-#[macro_export]
-macro_rules! format_move {
-    ($($arg:tt)*) => {
-        $crate::tools::disp_const(move |w| write!(w,$($arg)*))
-    }
-}
-
-///
 /// Convert a closure to a object that implements Display
 ///
 pub fn disp_const<F: Fn(&mut fmt::Formatter) -> fmt::Result>(a: F) -> DisplayableClosure<F> {
