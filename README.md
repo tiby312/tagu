@@ -7,18 +7,25 @@ Documentation at [docs.rs](https://docs.rs/tagu)
 ### Adaptor Example:
 
 ```rust
-use tagu::build::{elem, from_iter};
+use tagu::build;
 use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
-    let a = elem("a");
-    let b = elem("b");
-    let c = elem("c");
-    let it = (0..5).map(|i| elem(format_move!("x{}", i)).inline());
+    let a = build::elem("a");
+    let b = build::elem("b");
+    let c = build::elem("c");
+    let it = (0..5).map(|i| build::elem(format!("x{}", i)).inline());
+    let all = build::from_iter(it).insert(c).insert(b).insert(a);
+    
+    let m = build::from_stack(|s|{
+        let mut s=s.push(build::elem("stack"))?;
+        s.put(build::elem("test").append(build::elem("inner")))?;
+        s.pop()
+    });
 
-    let all = from_iter(it).insert(c).append(a).insert(b).insert(a);
+    let c = tagu::util::comment("this is comment");
 
-    tagu::render(all, tagu::stdout_fmt())
+    tagu::render(elems!(all,m,c), tagu::stdout_fmt())
 }
 
 ```
@@ -33,12 +40,59 @@ fn main() -> std::fmt::Result {
                         <x2></x2>
                         <x3></x3>
                         <x4></x4>
-                        <a>
-                        </a>
                 </c>
         </b>
 </a>
+<stack>
+        <test>
+                <inner>
+                </inner>
+        </test>
+</stack>
+<!--this is comment-->
 ```
+
+## Stack Example
+
+```rust
+use tagu::build;
+use tagu::prelude::*;
+
+fn main() -> std::fmt::Result {
+    let all = build::from_stack(|stack| {
+        let a = build::elem("a");
+        let b = build::elem("b");
+        let c = build::elem("c").with_tab("→");
+
+        let mut stack = stack.push(a)?.push(b)?.push(c)?;
+
+        for i in 0..5 {
+            let e = build::elem(format_move!("x{}", i)).inline();
+            stack.put(e)?;
+        }
+        stack.pop()?.pop()?.pop()
+    });
+
+    tagu::render(all.with_tab(" "), tagu::stdout_fmt())
+}
+
+```
+
+### Output Text:
+```html
+<a>
+ <b>
+→→<c>
+→→→<x0></x0>
+→→→<x1></x1>
+→→→<x2></x2>
+→→→<x3></x3>
+→→→<x4></x4>
+→→</c>
+ </b>
+</a>
+```
+
 
 ### SVG Example
 
@@ -69,24 +123,23 @@ fn main() -> std::fmt::Result {
         ("viewBox", format_move!("0 0 {} {}", width, height))
     ));
 
-    let rows = build::from_iter((0..50).step_by(5).map(|r| {
-        if r % 10 == 0 {
-            elems!(
-                Some(build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)))),
-                None
-            )
-        } else {
-            elems!(
-                None,
-                Some(build::single("rect").with(attrs!(
+    let rows = build::from_stack(|mut f| {
+        for r in (0..50).step_by(5) {
+            if r % 10 == 0 {
+                let c = build::single("circle").with(attrs!(("cx", 50.0), ("cy", 50.0), ("r", r)));
+                f.put(c)?;
+            } else {
+                let r = build::single("rect").with(attrs!(
                     ("x", 50 - r),
                     ("y", 50 - r),
                     ("width", r * 2),
                     ("height", r * 2)
-                )))
-            )
+                ));
+                f.put(r)?;
+            }
         }
-    }));
+        Ok(f)
+    });
 
     let table = build::elem("g").with(("class", "test")).append(rows);
 
@@ -94,27 +147,26 @@ fn main() -> std::fmt::Result {
 
     tagu::render(all, tagu::stdout_fmt())
 }
-
 ```
 
 ### Output
 
 ```html
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-        <style>.test{fill:none;stroke:white;stroke-width:3}</style>
-        <rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
-        <g class="test">
-                <circle cx="50" cy="50" r="0"/>
-                <rect x="45" y="45" width="10" height="10"/>
-                <circle cx="50" cy="50" r="10"/>
-                <rect x="35" y="35" width="30" height="30"/>
-                <circle cx="50" cy="50" r="20"/>
-                <rect x="25" y="25" width="50" height="50"/>
-                <circle cx="50" cy="50" r="30"/>
-                <rect x="15" y="15" width="70" height="70"/>
-                <circle cx="50" cy="50" r="40"/>
-                <rect x="5" y="5" width="90" height="90"/>
-        </g>
+    <style>.test{fill:none;stroke:white;stroke-width:3}</style>
+    <rect x1="0" y1="0" rx="20" ry="20" width="100" height="100" style="fill:blue"/>
+    <g class="test">
+            <circle cx="50" cy="50" r="0"/>
+            <rect x="45" y="45" width="10" height="10"/>
+            <circle cx="50" cy="50" r="10"/>
+            <rect x="35" y="35" width="30" height="30"/>
+            <circle cx="50" cy="50" r="20"/>
+            <rect x="25" y="25" width="50" height="50"/>
+            <circle cx="50" cy="50" r="30"/>
+            <rect x="15" y="15" width="70" height="70"/>
+            <circle cx="50" cy="50" r="40"/>
+            <rect x="5" y="5" width="90" height="90"/>
+    </g>
 </svg>
 ```
 
@@ -122,6 +174,18 @@ fn main() -> std::fmt::Result {
 
 See other example outputs at [https://github.com/tiby312/tagu/tree/main/assets](https://github.com/tiby312/tagu/tree/main/assets)
 
+
+
+### Which method to use?
+
+You can append elements via building of long adaptor chains, or you can render
+elements to a writer on the fly. With chaining,
+you don't have to worry about handling errors because nothing actually gets written out
+as you're chaining. However, you do tend to have to build things 'upside down'. You have to build
+the elements thats are the most nested first, and then you can append that to bigger and bigger elements.
+With rendering on the fly, yeah you have to handle errors, but the order in which elements are handled
+matches how they are rendered.
+You can mix and match because you can make elements from closures and then chain those elements together.
 
 ### Inline function
 
