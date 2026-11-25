@@ -13,7 +13,7 @@ fn main() -> std::fmt::Result {
         let mut stack = stack.push(a)?.push(b)?.push(c)?;
 
         for i in 0..5 {
-            let e = build::elem(format_move!("x{}", i)).inline();
+            let e = build::elem(format!("x{}", i)).inline();
             stack.put(e)?;
         }
         stack.pop()?.pop()?.pop()

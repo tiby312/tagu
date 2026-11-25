@@ -1,4 +1,4 @@
-use tagu::build;
+use tagu::build::{elem, from_iter};
 use tagu::prelude::*;
 
 fn main() -> std::fmt::Result {
@@ -7,7 +7,7 @@ fn main() -> std::fmt::Result {
     let c = elem("c");
     let it = (0..5).map(|i| elem(format!("x{}", i)).inline());
 
-    let c = tagu::util::comment("this is comment");
+    let all = from_iter(it).insert(c).append(a).insert(b).insert(a);
 
-    tagu::render(elems!(all,m,c), tagu::stdout_fmt())
+    tagu::render(all, tagu::stdout_fmt())
 }

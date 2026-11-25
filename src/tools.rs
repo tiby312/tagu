@@ -79,7 +79,6 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
     }
 }
 
-
 /// Convert a moved closure into a impl fmt::Display.
 /// This is useful because std's `format_args!()` macro
 /// has a shorter lifetime.

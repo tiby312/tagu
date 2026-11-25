@@ -265,9 +265,7 @@ pub trait Elem {
         Append { top: self, bottom }
     }
 
-    #[
-       deprecated(note = "use append and stack") 
-    ]
+    #[deprecated(note = "use append and stack")]
     fn append_with<F: FnOnce() -> R, R: Elem>(self, func: F) -> AppendWith<Self, F>
     where
         Self: Sized,
