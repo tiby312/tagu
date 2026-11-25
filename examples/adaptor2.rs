@@ -7,7 +7,7 @@ fn main() -> std::fmt::Result {
             build::single("test"),
             build::elem("b").append_with(|| {
                 let it =
-                    build::from_iter((0..5).map(|i| build::elem(format_move!("x{}", i)).inline()));
+                    build::from_iter((0..5).map(|i| build::elem(format!("x{}", i)).inline()));
 
                 build::elem("c").append(it)
             }),
